@@ -1,0 +1,93 @@
+{
+	"meta": {
+		"generatedAt": "2025-08-18T15:53:11.467Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 10,
+		"analysisCount": 10,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Setup Next.js Project with Tailwind and shadcn/ui",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the task into subtasks for each technology: Next.js setup, Tailwind CSS configuration, shadcn/ui installation, folder structure creation, and linting/formatting setup.",
+			"reasoning": "This task involves multiple technologies and configurations, making it moderately complex. Breaking it down into smaller subtasks will make it easier to manage and track progress."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Define Prisma Schema and Setup PostgreSQL Database",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide the task into defining the Prisma schema, configuring the PostgreSQL connection, running migrations, and generating the Prisma client.",
+			"reasoning": "Defining the schema based on the ER diagram can be complex, especially with numerous entities and relationships. Setting up the database and generating the client also require specific steps."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement Authentication with NextAuth.js and RBAC",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Split the task into NextAuth.js installation and configuration, authentication routes implementation, user role definition, middleware implementation for route protection, and JWT configuration for storing user roles.",
+			"reasoning": "Implementing authentication and authorization with RBAC involves multiple steps and considerations, including security best practices. This task requires a good understanding of NextAuth.js and RBAC concepts."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement Super Admin Panel with College CRUD Operations",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the task into creating the super admin page, implementing the college creation form, implementing the college table with CRUD actions, integrating with Prisma for data operations, and implementing pagination.",
+			"reasoning": "Implementing CRUD operations with pagination involves UI development, data handling, and database interaction. The complexity arises from integrating these different aspects."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Develop College Admin/Teacher Dashboard",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide the task into creating the dashboard page, implementing role-based access control, developing UI elements for managing entities, and fetching/displaying relevant data.",
+			"reasoning": "This task involves UI development and role-based access control, which adds complexity. Fetching and displaying data also requires careful planning."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement Student Registration and Management",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Split the task into creating the student registration form, implementing the student table with CRUD actions, integrating with Prisma for data operations, and implementing data validation.",
+			"reasoning": "Implementing student registration and management involves UI development, data handling, database interaction, and data validation. The complexity arises from integrating these different aspects and ensuring data integrity."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Implement Subject Creation and Management",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide the task into creating the subject creation form, implementing the subject table with CRUD actions, integrating with Prisma for data operations, and implementing data validation.",
+			"reasoning": "Similar to student management, this task involves UI development, data handling, database interaction, and data validation. The complexity arises from integrating these different aspects and ensuring data integrity."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Implement Exam Creation Interface",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the task into creating the exam creation form, implementing the question bank, integrating with Prisma for data operations, implementing data validation, and handling exam settings.",
+			"reasoning": "Implementing the exam creation interface involves complex UI elements, data handling, database interaction, and validation. The question bank adds another layer of complexity."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Develop Student Exam Taking Interface with Security Features",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Split the task into creating the exam taking page, implementing the timer and auto-submission, implementing browser lock, preventing keyboard shortcuts/copy-paste, and handling exam submission.",
+			"reasoning": "This task is highly complex due to the security features and real-time interactions required. Implementing browser lock and preventing cheating attempts requires advanced techniques."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Result Calculation and Display",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide the task into calculating the student's score, displaying the results with a breakdown, storing the results in the database, and implementing result export functionality.",
+			"reasoning": "Calculating and displaying results involves data processing, UI development, and database interaction. Implementing result export functionality adds another layer of complexity."
+		}
+	]
+}

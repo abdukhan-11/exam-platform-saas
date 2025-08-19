@@ -1,0 +1,14 @@
+# Task ID: 7
+# Title: Implement Subject Creation and Management
+# Status: pending
+# Dependencies: 2, 3, 5
+# Priority: medium
+# Description: Implement subject creation and management features within the college admin panel. Allow teachers to create new subjects and manage existing subject records.
+# Details:
+1. Create a form for subject creation with fields for subject name, code, etc.
+2. Implement a table to display all subjects with edit and delete options.
+3. Use Prisma client to perform CRUD operations on the `Subject` model.
+4. Implement validation for subject data.
+
+# Test Strategy:
+Verify that teachers can create new subjects and manage existing subject records. Ensure that subject data is validated correctly. Test the UI for subject creation and management.

@@ -1,0 +1,206 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Next.js Project with Tailwind and shadcn/ui",
+        "description": "Initialize the Next.js project with TypeScript, Tailwind CSS, and shadcn/ui components. Configure the basic project structure and install necessary dependencies.",
+        "details": "1. Use `create-next-app` with the TypeScript template.\n2. Install Tailwind CSS and configure it according to the documentation.\n3. Install shadcn/ui and initialize it within the project.\n4. Set up basic folder structure (components, pages, styles, utils).\n5. Configure ESLint and Prettier for code linting and formatting.",
+        "testStrategy": "Verify that the project builds successfully without errors. Check that Tailwind CSS styles are applied correctly. Ensure that shadcn/ui components can be imported and used.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Next.js project with TypeScript",
+            "description": "Create a new Next.js app (App Router) with TypeScript and required baseline settings. Verify dev server runs.",
+            "details": "- npx create-next-app@latest my-app --ts --eslint --app --src-dir --no-tailwind --import-alias \"@/*\"\n- Confirm dev server with: npm run dev\n- Ensure repo root and working directory are aligned with Taskmaster project.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 2,
+            "title": "Configure Tailwind CSS",
+            "description": "Install and configure Tailwind CSS with PostCSS for Next.js.",
+            "details": "- npm install -D tailwindcss postcss autoprefixer\n- npx tailwindcss init -p\n- Update tailwind.config.js content paths to include app, components, and src\n- Add Tailwind directives to globals.css",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 3,
+            "title": "Install shadcn/ui and base components",
+            "description": "Set up shadcn/ui CLI, configure components.json, and install core components.",
+            "details": "- npx shadcn@latest init\n- Configure `components.json` as needed (tailwind config path, alias)\n- Install base components: button, input, card, dialog, dropdown-menu, form",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 4,
+            "title": "Create base folder structure",
+            "description": "Organize project directories for features, shared UI, lib, and config.",
+            "details": "- Create `app/(marketing)` and `app/(dashboard)` groups\n- Create `components/ui` and `components/shared`\n- Create `lib` for utilities and `types` for shared TypeScript types\n- Set up `env` handling with next-safe-env or zod",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          },
+          {
+            "id": 5,
+            "title": "Configure linting and formatting",
+            "description": "Set up ESLint, Prettier, and import sorting compatible with Next.js and Tailwind.",
+            "details": "- Ensure ESLint Next.js config and TypeScript support\n- Add Prettier with tailwind plugin and config\n- Add import/order and simple-import-sort\n- Add format and lint npm scripts, run and fix issues",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 1
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Define Prisma Schema and Setup PostgreSQL Database",
+        "description": "Define the Prisma schema based on the provided data models. Configure the PostgreSQL database and generate the Prisma client.",
+        "details": "1. Define the data models in `prisma/schema.prisma` based on the ER diagram (SuperAdmin, College, User, Subject, Exam, Question, etc.).\n2. Configure the PostgreSQL connection string in `.env`.\n3. Run `prisma migrate dev` to create the database tables.\n4. Generate the Prisma client using `prisma generate`.",
+        "testStrategy": "Verify that the database tables are created correctly. Ensure that the Prisma client can connect to the database and perform basic CRUD operations.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement Authentication with NextAuth.js and RBAC",
+        "description": "Implement the authentication system using NextAuth.js with JWT and refresh tokens. Configure role-based access control (RBAC) to manage user permissions.",
+        "details": "1. Install NextAuth.js and configure it with a JWT strategy.\n2. Implement authentication routes for login, registration, and logout.\n3. Define user roles (super_admin, college_admin, teacher, student) in the database.\n4. Implement middleware to protect routes based on user roles.\n5. Store user roles in the JWT for authorization.",
+        "testStrategy": "Verify that users can register, login, and logout successfully. Ensure that role-based access control is working correctly. Test different user roles and verify that they have access to the appropriate routes and resources.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Super Admin Panel with College CRUD Operations",
+        "description": "Create the super admin panel with CRUD operations for managing colleges. Implement the UI for creating, reading, updating, and deleting college records.",
+        "details": "1. Create a new page for the super admin panel.\n2. Implement a form for creating new colleges.\n3. Implement a table to display all colleges with edit and delete options.\n4. Use Prisma client to perform CRUD operations on the `College` model.\n5. Implement pagination for large numbers of colleges.",
+        "testStrategy": "Verify that super admins can create, read, update, and delete college records. Ensure that the UI is responsive and user-friendly. Test pagination for large numbers of colleges.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Develop College Admin/Teacher Dashboard",
+        "description": "Develop the college admin/teacher dashboard with role-based access control. Implement UI elements for managing students, subjects, and exams.",
+        "details": "1. Create a new page for the college admin/teacher dashboard.\n2. Implement role-based access control to restrict access based on user roles.\n3. Implement UI elements for managing students, subjects, and exams.\n4. Fetch and display relevant data for the college admin/teacher.",
+        "testStrategy": "Verify that college admins and teachers can access the dashboard. Ensure that role-based access control is working correctly. Test the UI elements for managing students, subjects, and exams.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Student Registration and Management",
+        "description": "Implement student registration and management features within the college admin panel. Allow college admins to register new students and manage existing student records.",
+        "details": "1. Create a form for student registration with fields for roll number, name, password, etc.\n2. Implement a table to display all students with edit and delete options.\n3. Use Prisma client to perform CRUD operations on the `Student` model.\n4. Implement validation for student data.",
+        "testStrategy": "Verify that college admins can register new students and manage existing student records. Ensure that student data is validated correctly. Test the UI for student registration and management.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Subject Creation and Management",
+        "description": "Implement subject creation and management features within the college admin panel. Allow teachers to create new subjects and manage existing subject records.",
+        "details": "1. Create a form for subject creation with fields for subject name, code, etc.\n2. Implement a table to display all subjects with edit and delete options.\n3. Use Prisma client to perform CRUD operations on the `Subject` model.\n4. Implement validation for subject data.",
+        "testStrategy": "Verify that teachers can create new subjects and manage existing subject records. Ensure that subject data is validated correctly. Test the UI for subject creation and management.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Exam Creation Interface",
+        "description": "Implement the exam creation interface for teachers. Allow teachers to create new exams, add questions, set timers, and configure exam settings.",
+        "details": "1. Create a form for exam creation with fields for subject, timer, questions, etc.\n2. Implement a question bank with MCQ support.\n3. Use Prisma client to perform CRUD operations on the `Exam` and `Question` models.\n4. Implement validation for exam data.",
+        "testStrategy": "Verify that teachers can create new exams, add questions, set timers, and configure exam settings. Ensure that exam data is validated correctly. Test the UI for exam creation.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Develop Student Exam Taking Interface with Security Features",
+        "description": "Develop the student exam taking interface with timer implementation and auto-submission. Implement browser lock and other security features.",
+        "details": "1. Create a new page for the student exam taking interface.\n2. Implement a timer that counts down and auto-submits the exam when it expires.\n3. Implement browser lock to prevent tab switching and other cheating attempts.\n4. Use JavaScript to detect and prevent keyboard shortcuts and copy/paste attempts.",
+        "testStrategy": "Verify that students can take exams with the timer and auto-submission features. Ensure that the browser lock and other security features are working correctly. Test the UI for the student exam taking interface.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          6,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement Result Calculation and Display",
+        "description": "Implement basic result calculation and display. Show immediate results to students after exam submission.",
+        "details": "1. Calculate the student's score based on their answers.\n2. Display the results to the student with a breakdown of correct and incorrect answers.\n3. Store the results in the database.\n4. Implement result export functionality (PDF/Excel).",
+        "testStrategy": "Verify that the results are calculated and displayed correctly. Ensure that the results are stored in the database. Test the result export functionality.",
+        "priority": "medium",
+        "dependencies": [
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Basic UI Components and Layout",
+        "description": "Create reusable UI components using shadcn/ui for consistent design across all panels",
+        "priority": "high",
+        "dependencies": [
+          1
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-18T15:50:22.828Z",
+      "updated": "2025-08-18T15:50:22.829Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
