@@ -1,3 +1,58 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+.vercel/
+
+# Build outputs
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Env files (keep examples)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Prisma (keep migrations, ignore local dev databases)
+prisma/dev.db
+prisma/dev.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Caches
+.turbo/
+.swc/
+.cache/
+
+# Testing/coverage
+coverage/
+.nyc_output/
+
+# Misc
+tmp/
+temp/
 # --- Node & Next.js ---
 node_modules/
 .npm/
