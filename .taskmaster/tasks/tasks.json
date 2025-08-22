@@ -866,7 +866,7 @@
           1,
           2
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -874,7 +874,7 @@
             "description": "Install the NextAuth.js library and configure it with a JWT strategy for authentication.",
             "dependencies": [],
             "details": "Install NextAuth.js, set up the necessary providers, and configure the JWT strategy for session management.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -885,7 +885,7 @@
               "3.1"
             ],
             "details": "Create API endpoints for login, registration, and logout functionalities, integrating with NextAuth.js for authentication.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -906,7 +906,7 @@
               "3.2"
             ],
             "details": "Create middleware functions that check the user's role and grant or deny access to routes based on the defined roles.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -918,7 +918,7 @@
               "3.3"
             ],
             "details": "Modify the NextAuth.js configuration to include the user's role in the JWT payload, enabling role-based access control.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -927,7 +927,7 @@
             "description": "Set up NextAuth.js to use Google as an authentication provider.",
             "dependencies": [],
             "details": "Configure the Google provider in NextAuth.js with the necessary credentials and settings.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -936,7 +936,7 @@
             "description": "Set up NextAuth.js to use a credentials provider for email/password authentication.",
             "dependencies": [],
             "details": "Configure the credentials provider in NextAuth.js, including hashing and verifying passwords.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -945,7 +945,7 @@
             "description": "Configure session management using JWT for authentication.",
             "dependencies": [],
             "details": "Set up JWT-based session management in NextAuth.js, including token creation, verification, and refresh.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -963,7 +963,7 @@
             "description": "Implement middleware to protect routes accessible only to super admins.",
             "dependencies": [],
             "details": "Create a middleware function that checks if the user has the 'super_admin' role and redirects them if they don't.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -972,7 +972,7 @@
             "description": "Implement middleware to protect routes accessible only to college admins.",
             "dependencies": [],
             "details": "Create a middleware function that checks if the user has the 'college_admin' role and redirects them if they don't.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1053,7 +1053,7 @@
             "description": "Create middleware to protect API routes based on user roles.",
             "dependencies": [],
             "details": "Check the user's role from the JWT and allow or deny access to the route.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1062,7 +1062,7 @@
             "description": "Create middleware to protect entire pages based on user roles.",
             "dependencies": [],
             "details": "Redirect users to an unauthorized page if they don't have the required role.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1071,7 +1071,7 @@
             "description": "Modify the JWT creation process to include the user's roles as claims.",
             "dependencies": [],
             "details": "Add the 'roles' field to the JWT payload during sign-in.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1080,7 +1080,7 @@
             "description": "Implement refresh token rotation for enhanced security.",
             "dependencies": [],
             "details": "Generate a new refresh token upon each access token refresh.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1089,7 +1089,7 @@
             "description": "Add error handling to authentication routes to handle invalid credentials, database errors, etc.",
             "dependencies": [],
             "details": "Return appropriate error messages to the client.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1098,7 +1098,7 @@
             "description": "Log successful logins, failed login attempts, registration events, and other authentication-related events.",
             "dependencies": [],
             "details": "Use a logging library to record events with appropriate severity levels.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1107,7 +1107,7 @@
             "description": "Add rate limiting to authentication routes to prevent brute-force attacks.",
             "dependencies": [],
             "details": "Limit the number of login attempts per IP address within a certain time window.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1116,7 +1116,7 @@
             "description": "Sanitize user inputs in registration and login forms to prevent XSS attacks.",
             "dependencies": [],
             "details": "Use a sanitization library to escape HTML and JavaScript code.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1125,7 +1125,7 @@
             "description": "Manage user sessions using refresh tokens for persistent authentication.",
             "dependencies": [],
             "details": "Store refresh tokens securely and use them to issue new access tokens.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1134,7 +1134,7 @@
             "description": "Add CSRF protection to authentication forms to prevent cross-site request forgery attacks.",
             "dependencies": [],
             "details": "Generate and validate CSRF tokens for each form submission.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1143,7 +1143,7 @@
             "description": "Lock user accounts after a certain number of failed login attempts to prevent brute-force attacks.",
             "dependencies": [],
             "details": "Temporarily disable the account and require the user to reset their password.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1152,7 +1152,7 @@
             "description": "Log all changes to user roles for auditing purposes.",
             "dependencies": [],
             "details": "Record the user who made the change, the user whose role was changed, and the old and new roles.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1161,7 +1161,7 @@
             "description": "Create middleware specifically for protecting API routes based on user roles. This middleware should verify the JWT and user role before allowing access to the API endpoint.",
             "dependencies": [],
             "details": "Implement a function that extracts the JWT from the request headers, verifies the token, and checks if the user's role has permission to access the requested API endpoint. Return an error if the user does not have the required role.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1170,7 +1170,7 @@
             "description": "Create middleware for protecting page access based on user roles. This middleware should redirect users to an appropriate page if they do not have the required role.",
             "dependencies": [],
             "details": "Implement a function that checks the user's role against the required roles for a specific page. If the user does not have the required role, redirect them to a 'forbidden' or 'login' page.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1179,7 +1179,7 @@
             "description": "Modify the JWT configuration to include user roles as claims within the token. This allows the middleware to easily access the user's roles for authorization.",
             "dependencies": [],
             "details": "Update the NextAuth.js JWT callback to add the user's roles to the token's payload. Ensure that the roles are stored in a consistent and easily accessible format.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1188,7 +1188,7 @@
             "description": "Implement refresh token rotation to enhance security. This involves issuing a new refresh token each time the access token is refreshed.",
             "dependencies": [],
             "details": "Implement logic to generate a new refresh token when the access token is refreshed. Store the new refresh token securely and invalidate the old refresh token.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1197,7 +1197,7 @@
             "description": "Create a reusable utility function to check if a user has a specific role.",
             "dependencies": [],
             "details": "Implement a function that takes a user's roles and a required role as input and returns true if the user has the required role, and false otherwise.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1206,7 +1206,7 @@
             "description": "Test the API route middleware with different user roles to ensure that access is granted or denied correctly.",
             "dependencies": [],
             "details": "Create test cases for each user role (super_admin, college_admin, teacher, student) and verify that they have access to the appropriate API endpoints.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1215,7 +1215,7 @@
             "description": "Test the page access middleware with different user roles to ensure that users are redirected correctly.",
             "dependencies": [],
             "details": "Create test cases for each user role and verify that they are redirected to the correct pages based on their roles.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1224,7 +1224,7 @@
             "description": "Implement a secure storage mechanism for refresh tokens, such as using HTTP-only cookies or a database.",
             "dependencies": [],
             "details": "Choose a secure storage method for refresh tokens and implement the necessary code to store and retrieve them securely.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1233,7 +1233,7 @@
             "description": "Implement a mechanism to invalidate refresh tokens when a user logs out or when a token is compromised.",
             "dependencies": [],
             "details": "Implement logic to invalidate refresh tokens when a user logs out or when a token is detected as compromised. This may involve storing a list of invalidated tokens in a database.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1242,7 +1242,7 @@
             "description": "Document the RBAC implementation, including the middleware configuration, JWT claims, and refresh token rotation process.",
             "dependencies": [],
             "details": "Create documentation that explains how the RBAC system works, how to configure it, and how to troubleshoot any issues.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1253,7 +1253,7 @@
               "3.5"
             ],
             "details": "Implement logic to verify JWT and check user roles against required roles for API endpoints.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1264,7 +1264,7 @@
               "3.5"
             ],
             "details": "Implement logic to verify JWT and redirect users to appropriate pages based on their roles.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1275,7 +1275,7 @@
               "3.2"
             ],
             "details": "Ensure that user roles are correctly added to the JWT payload during login.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
               "3.43"
             ],
             "details": "This middleware will check if the user has the super_admin role and allow access accordingly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1301,7 +1301,7 @@
               "3.43"
             ],
             "details": "This middleware will check if the user has the college_admin role and allow access accordingly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1314,7 +1314,7 @@
               "3.43"
             ],
             "details": "This middleware will check if the user has the teacher role and allow access accordingly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1327,7 +1327,7 @@
               "3.43"
             ],
             "details": "This middleware will check if the user has the student role and allow access accordingly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1342,7 +1342,7 @@
               "3.48"
             ],
             "details": "Verify that users with the correct roles can access the API routes and users with incorrect roles are denied access.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1357,7 +1357,7 @@
               "3.48"
             ],
             "details": "Verify that users with the correct roles can access the pages and users with incorrect roles are redirected.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1368,7 +1368,7 @@
               "3.2"
             ],
             "details": "Rotate refresh tokens after each use to minimize the impact of token compromise.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1491,7 +1491,7 @@
             "description": "Configure NextAuth.js to use JWT for session management, including setting secret keys and token expiration times.",
             "dependencies": [],
             "details": "Configure the `jwt` callback in NextAuth.js to customize the JWT creation and verification process.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1502,7 +1502,7 @@
               "3.62"
             ],
             "details": "Implement a refresh token endpoint that issues new JWT tokens based on a valid refresh token.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1511,7 +1511,7 @@
             "description": "Create the base middleware function for role-based access control.",
             "dependencies": [],
             "details": "Create a middleware function that checks the user's role and grants or denies access to a route.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1634,7 +1634,7 @@
             "description": "Implement password reset functionality using email verification.",
             "dependencies": [],
             "details": "Create an API endpoint for requesting password reset and sending email verification links.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1643,7 +1643,7 @@
             "description": "Implement account verification via email after user registration.",
             "dependencies": [],
             "details": "Send a verification email to the user after registration and require them to verify their account before logging in.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4360,7 +4360,7 @@
     ],
     "metadata": {
       "created": "2025-08-18T15:50:22.828Z",
-      "updated": "2025-08-21T19:46:55.902Z",
+      "updated": "2025-08-22T18:31:04.457Z",
       "description": "Tasks for master context"
     }
   }
