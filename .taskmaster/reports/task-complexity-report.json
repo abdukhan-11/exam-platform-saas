@@ -1,61 +1,61 @@
 {
-	"meta": {
-		"generatedAt": "2025-08-19T20:06:55.857Z",
-		"tasksAnalyzed": 1,
-		"totalTasks": 11,
-		"analysisCount": 6,
-		"thresholdScore": 5,
-		"projectName": "Taskmaster",
-		"usedResearch": false
-	},
-	"complexityAnalysis": [
-		{
-			"taskId": 5,
-			"taskTitle": "Develop College Admin/Teacher Dashboard",
-			"complexityScore": 8,
-			"recommendedSubtasks": 10,
-			"expansionPrompt": "Expand the subtasks for 'Develop College Admin/Teacher Dashboard' to include specific tasks for UI/UX design for each role (Super Admin, College Admin, Teacher), API integration for each entity (students, subjects, exams), data validation, error handling, and thorough testing for each role and functionality.",
-			"reasoning": "This task involves multiple roles, UI elements, and data management, making it complex. The existing subtasks are granular, but more detail on UI/UX, API integration, validation, error handling, and testing is needed."
-		},
-		{
-			"taskId": 9,
-			"taskTitle": "Develop Student Exam Taking Interface with Security Features",
-			"complexityScore": 9,
-			"recommendedSubtasks": 8,
-			"expansionPrompt": "Expand the subtasks for 'Develop Student Exam Taking Interface with Security Features' to detail specific security measures like browser lock implementation, keyboard shortcut prevention, copy/paste disabling, and anti-tampering techniques. Also, include subtasks for timer accuracy testing and auto-submission reliability.",
-			"reasoning": "This task is highly complex due to the security features and real-time requirements. More subtasks are needed to address the intricacies of each security measure and ensure reliable timer and auto-submission functionality."
-		},
-		{
-			"taskId": 8,
-			"taskTitle": "Implement Exam Creation Interface",
-			"complexityScore": 7,
-			"recommendedSubtasks": 7,
-			"expansionPrompt": "Expand the subtasks for 'Implement Exam Creation Interface' to include detailed tasks for question bank implementation (MCQ, true/false, essay), timer configuration, exam settings (e.g., shuffling questions, showing results), data validation rules, and UI testing for different question types and exam configurations.",
-			"reasoning": "This task involves UI development, data management, and validation. More subtasks are needed to cover the different question types, exam settings, and validation rules."
-		},
-		{
-			"taskId": 10,
-			"taskTitle": "Implement Result Calculation and Display",
-			"complexityScore": 6,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Expand the subtasks for 'Implement Result Calculation and Display' to include tasks for calculating scores for different question types, displaying results breakdown (correct/incorrect), storing results in the database, implementing result export functionality (PDF/Excel), and testing the accuracy of calculations and export formats.",
-			"reasoning": "This task involves calculation logic, UI display, and data storage. More subtasks are needed to address the different aspects of result calculation, display, storage, and export."
-		},
-		{
-			"taskId": 3,
-			"taskTitle": "Implement Authentication with NextAuth.js and RBAC",
-			"complexityScore": 9,
-			"recommendedSubtasks": 12,
-			"expansionPrompt": "Expand the subtasks for 'Implement Authentication with NextAuth.js and RBAC' to include tasks for configuring NextAuth.js with JWT and refresh tokens, implementing authentication routes (login, registration, logout), defining user roles in the database, implementing middleware for role-based access control, storing user roles in the JWT, and testing different user roles and permissions.",
-			"reasoning": "Authentication and RBAC are complex. The existing subtasks are high-level. More subtasks are needed to detail the configuration, implementation, and testing of each component."
-		},
-		{
-			"taskId": 1,
-			"taskTitle": "Setup Next.js Project with Tailwind and shadcn/ui",
-			"complexityScore": 5,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Expand the subtasks for 'Setup Next.js Project with Tailwind and shadcn/ui' to include specific tasks for creating the Next.js app with TypeScript, installing and configuring Tailwind CSS, installing and initializing shadcn/ui, setting up the basic folder structure, and configuring ESLint and Prettier.",
-			"reasoning": "Setting up the project is relatively straightforward but requires specific steps. More subtasks will help ensure each step is completed correctly."
-		}
-	]
+  "meta": {
+    "generatedAt": "2025-08-19T20:06:55.857Z",
+    "tasksAnalyzed": 1,
+    "totalTasks": 11,
+    "analysisCount": 6,
+    "thresholdScore": 5,
+    "projectName": "Taskmaster",
+    "usedResearch": false
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 5,
+      "taskTitle": "Develop College Admin/Teacher Dashboard",
+      "complexityScore": 8,
+      "recommendedSubtasks": 10,
+      "expansionPrompt": "Expand the subtasks for 'Develop College Admin/Teacher Dashboard' to include specific tasks for UI/UX design for each role (Super Admin, College Admin, Teacher), API integration for each entity (students, subjects, exams), data validation, error handling, and thorough testing for each role and functionality.",
+      "reasoning": "This task involves multiple roles, UI elements, and data management, making it complex. The existing subtasks are granular, but more detail on UI/UX, API integration, validation, error handling, and testing is needed."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Develop Student Exam Taking Interface with Security Features",
+      "complexityScore": 9,
+      "recommendedSubtasks": 8,
+      "expansionPrompt": "Expand the subtasks for 'Develop Student Exam Taking Interface with Security Features' to detail specific security measures like browser lock implementation, keyboard shortcut prevention, copy/paste disabling, and anti-tampering techniques. Also, include subtasks for timer accuracy testing and auto-submission reliability.",
+      "reasoning": "This task is highly complex due to the security features and real-time requirements. More subtasks are needed to address the intricacies of each security measure and ensure reliable timer and auto-submission functionality."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement Exam Creation Interface",
+      "complexityScore": 7,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Expand the subtasks for 'Implement Exam Creation Interface' to include detailed tasks for question bank implementation (MCQ, true/false, essay), timer configuration, exam settings (e.g., shuffling questions, showing results), data validation rules, and UI testing for different question types and exam configurations.",
+      "reasoning": "This task involves UI development, data management, and validation. More subtasks are needed to cover the different question types, exam settings, and validation rules."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Implement Result Calculation and Display",
+      "complexityScore": 6,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Expand the subtasks for 'Implement Result Calculation and Display' to include tasks for calculating scores for different question types, displaying results breakdown (correct/incorrect), storing results in the database, implementing result export functionality (PDF/Excel), and testing the accuracy of calculations and export formats.",
+      "reasoning": "This task involves calculation logic, UI display, and data storage. More subtasks are needed to address the different aspects of result calculation, display, storage, and export."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Implement Authentication with NextAuth.js and RBAC",
+      "complexityScore": 9,
+      "recommendedSubtasks": 12,
+      "expansionPrompt": "Expand the subtasks for 'Implement Authentication with NextAuth.js and RBAC' to include tasks for configuring NextAuth.js with JWT and refresh tokens, implementing authentication routes (login, registration, logout), defining user roles in the database, implementing middleware for role-based access control, storing user roles in the JWT, and testing different user roles and permissions.",
+      "reasoning": "Authentication and RBAC are complex. The existing subtasks are high-level. More subtasks are needed to detail the configuration, implementation, and testing of each component."
+    },
+    {
+      "taskId": 1,
+      "taskTitle": "Setup Next.js Project with Tailwind and shadcn/ui",
+      "complexityScore": 5,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Expand the subtasks for 'Setup Next.js Project with Tailwind and shadcn/ui' to include specific tasks for creating the Next.js app with TypeScript, installing and configuring Tailwind CSS, installing and initializing shadcn/ui, setting up the basic folder structure, and configuring ESLint and Prettier.",
+      "reasoning": "Setting up the project is relatively straightforward but requires specific steps. More subtasks will help ensure each step is completed correctly."
+    }
+  ]
 }
