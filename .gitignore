@@ -142,3 +142,7 @@ node_modules/
 .DS_Store
 
 /src/generated/prisma
+
+# Task files
+# tasks.json
+# tasks/ 

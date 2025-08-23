@@ -3,6 +3,8 @@ import { getToken } from 'next-auth/jwt';
 import { AppRole } from '@/types/auth';
 import { verifyAccessToken } from '@/lib/auth/token-service';
 import { env } from '@/lib/env';
+import { getRolePermissions, hasPermission, canAccessEndpoint } from './rbac-config';
+import { errorLogger } from '@/lib/error-logger';
 
 export function hasRole(user: { role?: AppRole } | undefined, requiredRoles: AppRole[]): boolean {
   if (!user || !user.role) {
@@ -37,6 +39,13 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
       }
 
       if (!role) {
+        errorLogger.logWarning('Access denied - No valid token found', {
+          pathname: req.nextUrl.pathname,
+          method: req.method,
+          userAgent: req.headers.get('user-agent'),
+          ip: req.headers.get('x-forwarded-for') || 'unknown'
+        });
+        
         return NextResponse.json({ 
           error: 'Unauthorized - No valid token found',
           code: 'NO_TOKEN'
@@ -44,18 +53,43 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
       }
 
       if (!hasRole({ role }, requiredRoles)) {
-        console.warn(`Access denied: User with role ${role} attempted to access route requiring roles: ${requiredRoles.join(', ')}`);
+        const permissions = getRolePermissions(role);
+        const requiredPermissions = requiredRoles.map(r => getRolePermissions(r));
+        
+        errorLogger.logWarning(`Access denied - Insufficient permissions`, {
+          userRole: role,
+          requiredRoles,
+          pathname: req.nextUrl.pathname,
+          method: req.method,
+          userAgent: req.headers.get('user-agent'),
+          ip: req.headers.get('x-forwarded-for') || 'unknown'
+        });
+        
         return NextResponse.json({ 
           error: 'Forbidden - Insufficient permissions',
           code: 'INSUFFICIENT_PERMISSIONS',
           required: requiredRoles,
-          current: role
+          current: role,
+          currentPermissions: permissions,
+          requiredPermissions
         }, { status: 403 });
       }
 
+      // Log successful access
+      errorLogger.logInfo('Access granted', {
+        userRole: role,
+        endpoint: req.nextUrl.pathname,
+        method: req.method,
+        userId: token?.id
+      });
+
       return handler(req, ...args);
     } catch (error) {
-      console.error('RBAC middleware error:', error);
+      errorLogger.logError('RBAC middleware error', error, {
+        pathname: req.nextUrl.pathname,
+        method: req.method
+      });
+      
       return NextResponse.json({ 
         error: 'Internal server error in RBAC middleware',
         code: 'RBAC_ERROR'
@@ -86,6 +120,13 @@ export async function guardRole(
     }
 
     if (!role) {
+      errorLogger.logWarning('Access denied - No valid authentication found', {
+        endpoint: req.nextUrl.pathname,
+        method: req.method,
+        userAgent: req.headers.get('user-agent'),
+        ip: req.headers.get('x-forwarded-for') || 'unknown'
+      });
+      
       return NextResponse.json({ 
         error: 'Unauthorized - No valid authentication found',
         code: 'NO_AUTH'
@@ -93,18 +134,43 @@ export async function guardRole(
     }
 
     if (!allowed.includes(role)) {
-      console.warn(`Access denied: User with role ${role} attempted to access route requiring roles: ${allowed.join(', ')}`);
+      const permissions = getRolePermissions(role);
+      const requiredPermissions = allowed.map(r => getRolePermissions(r));
+      
+              errorLogger.logWarning(`Access denied - Insufficient permissions`, {
+          userRole: role,
+          requiredRoles: allowed,
+          pathname: req.nextUrl.pathname,
+          method: req.method,
+          userAgent: req.headers.get('user-agent'),
+          ip: req.headers.get('x-forwarded-for') || 'unknown'
+        });
+      
       return NextResponse.json({ 
         error: 'Forbidden - Insufficient permissions',
         code: 'INSUFFICIENT_PERMISSIONS',
         required: allowed,
-        current: role
+        current: role,
+        currentPermissions: permissions,
+        requiredPermissions
       }, { status: 403 });
     }
 
+    // Log successful access
+    errorLogger.logInfo('Access granted', {
+      userRole: role,
+      endpoint: req.nextUrl.pathname,
+      method: req.method,
+      userId: token?.id
+    });
+
     return null;
   } catch (error) {
-    console.error('Role guard error:', error);
+    errorLogger.logError('Role guard error', error, {
+      endpoint: req.nextUrl.pathname,
+      method: req.method
+    });
+    
     return NextResponse.json({ 
       error: 'Internal server error in role guard',
       code: 'ROLE_GUARD_ERROR'
@@ -132,19 +198,80 @@ export function requireRole(requiredRoles: AppRole[]) {
 }
 
 export async function guardSuperAdmin(req: NextRequest) {
-  return guardRole(req, ['SUPER_ADMIN']);
+  return guardRole(req, [AppRole.SUPER_ADMIN]);
 }
 
 export async function guardCollegeAdmin(req: NextRequest) {
-  return guardRole(req, ['COLLEGE_ADMIN', 'SUPER_ADMIN']);
+  return guardRole(req, [AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
 }
 
 export async function guardTeacher(req: NextRequest) {
-  return guardRole(req, ['TEACHER', 'COLLEGE_ADMIN', 'SUPER_ADMIN']);
+  return guardRole(req, [AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
 }
 
 export async function guardStudent(req: NextRequest) {
-  return guardRole(req, ['STUDENT', 'COLLEGE_ADMIN', 'SUPER_ADMIN']);
+  return guardRole(req, [AppRole.STUDENT, AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
+}
+
+// Enhanced middleware with endpoint-specific permission checking
+export function withEndpointPermission(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>) {
+  return async (req: NextRequest, ...args: unknown[]) => {
+    try {
+      let token = await getToken({ req, secret: env.NEXTAUTH_SECRET });
+      let role: AppRole | undefined = token?.role as AppRole | undefined;
+
+      if (!role) {
+        const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const rawToken = authHeader.slice('Bearer '.length).trim();
+          const decoded = verifyAccessToken(rawToken);
+          if (decoded && typeof decoded === 'object' && 'role' in decoded) {
+            role = decoded.role as AppRole;
+          }
+        }
+      }
+
+      if (!role) {
+        return NextResponse.json({ 
+          error: 'Unauthorized - No valid token found',
+          code: 'NO_TOKEN'
+        }, { status: 401 });
+      }
+
+      const endpoint = req.nextUrl.pathname;
+      if (!canAccessEndpoint(role, endpoint)) {
+        const permissions = getRolePermissions(role);
+        
+        errorLogger.logWarning(`Endpoint access denied`, {
+          userRole: role,
+          endpoint,
+          method: req.method,
+          userAgent: req.headers.get('user-agent'),
+          ip: req.headers.get('x-forwarded-for') || 'unknown'
+        });
+        
+        return NextResponse.json({ 
+          error: 'Forbidden - Endpoint access not allowed for this role',
+          code: 'ENDPOINT_ACCESS_DENIED',
+          userRole: role,
+          endpoint,
+          allowedEndpoints: permissions.apiEndpoints
+        }, { status: 403 });
+      }
+
+      return handler(req, ...args);
+    } catch (error) {
+      errorLogger.logError('Endpoint permission middleware error', error, {
+        endpoint: req.nextUrl.pathname,
+        method: req.method
+      });
+      
+      return NextResponse.json({ 
+        error: 'Internal server error in permission middleware',
+        code: 'PERMISSION_MIDDLEWARE_ERROR'
+      }, { status: 500 });
+    }
+  };
 }
 
 

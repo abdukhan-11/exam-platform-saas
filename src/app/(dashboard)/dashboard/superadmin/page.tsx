@@ -1,4 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function SuperAdminDashboard() {
   return (
@@ -18,15 +20,18 @@ export default function SuperAdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="relative">
           <CardHeader>
             <CardTitle>College Management</CardTitle>
             <CardDescription>Manage colleges and institutions</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Add, edit, and manage colleges, their settings, and administrative access.
             </p>
+            <Button asChild>
+              <Link href="/dashboard/superadmin/colleges">Manage Colleges</Link>
+            </Button>
           </CardContent>
         </Card>
 

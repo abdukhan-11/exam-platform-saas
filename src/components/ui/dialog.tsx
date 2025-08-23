@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const Dialog = DialogPrimitive.Root;
 
@@ -108,6 +109,80 @@ const DialogDescription = React.forwardRef<
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
+// Enhanced Confirmation Dialog Component
+interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+  variant?: 'default' | 'destructive';
+  isLoading?: boolean;
+}
+
+const ConfirmDialog = ({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  onConfirm,
+  onCancel,
+  variant = 'default',
+  isLoading = false,
+}: ConfirmDialogProps) => {
+  const handleConfirm = () => {
+    onConfirm();
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className={cn(
+            variant === 'destructive' && "text-red-600"
+          )}>
+            {title}
+          </DialogTitle>
+          <DialogDescription className="text-left">
+            {description}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            {cancelText}
+          </Button>
+          <Button
+            type="button"
+            variant={variant === 'destructive' ? 'destructive' : 'default'}
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : confirmText}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export {
   Dialog,
   DialogClose,
@@ -119,4 +194,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  ConfirmDialog,
 };

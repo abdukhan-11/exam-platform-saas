@@ -2,7 +2,13 @@ import { UserRole } from '@prisma/client';
 import { JWT } from 'next-auth/jwt';
 import { Session } from 'next-auth';
 
-export type AppRole = UserRole | 'SUPER_ADMIN';
+// Create a proper enum that includes SUPER_ADMIN
+export enum AppRole {
+  STUDENT = 'STUDENT',
+  TEACHER = 'TEACHER',
+  COLLEGE_ADMIN = 'COLLEGE_ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN'
+}
 
 export interface UserSession extends Session {
   user: {
