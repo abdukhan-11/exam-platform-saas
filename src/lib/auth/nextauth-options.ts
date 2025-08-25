@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 1 day
+    maxAge: 24 * 60 * 60, // 1 day for regular users
   },
   pages: {
     signIn: '/auth/login',
@@ -20,8 +20,124 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   providers: [
+    // Admin/Teacher authentication (email/password)
     CredentialsProvider({
-      name: 'Credentials',
+      id: 'admin-teacher',
+      name: 'Admin/Teacher',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+        collegeUsername: { label: 'College Username', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password || !credentials?.collegeUsername) {
+          return null;
+        }
+
+        try {
+          // First resolve college
+          const college = await db.college.findUnique({
+            where: { 
+              username: credentials.collegeUsername,
+              isActive: true 
+            }
+          });
+
+          if (!college) {
+            return null;
+          }
+
+          // Try to find user in the specific college
+          const user = await db.user.findFirst({ 
+            where: { 
+              email: credentials.email,
+              collegeId: college.id,
+              isActive: true
+            } 
+          });
+          
+          if (user && (await verifyPassword(credentials.password, user.password))) {
+            // Validate role before returning
+            if (isValidRole(user.role) && (user.role === 'TEACHER' || user.role === 'COLLEGE_ADMIN')) {
+              return { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role as AppRole, 
+                collegeId: user.collegeId, 
+                image: null
+              };
+            }
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Admin/Teacher auth error:', error);
+          return null;
+        }
+      },
+    }),
+
+    // Student authentication (rollNo/password)
+    CredentialsProvider({
+      id: 'student',
+      name: 'Student',
+      credentials: {
+        rollNo: { label: 'Roll Number', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+        collegeUsername: { label: 'College Username', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.rollNo || !credentials?.password || !credentials?.collegeUsername) {
+          return null;
+        }
+
+        try {
+          // First resolve college
+          const college = await db.college.findUnique({
+            where: { 
+              username: credentials.collegeUsername,
+              isActive: true 
+            }
+          });
+
+          if (!college) {
+            return null;
+          }
+
+          // Try to find student in the specific college
+          const student = await db.user.findFirst({ 
+            where: { 
+              rollNo: credentials.rollNo,
+              collegeId: college.id,
+              role: 'STUDENT',
+              isActive: true
+            } 
+          });
+          
+          if (student && (await verifyPassword(credentials.password, student.password))) {
+            return { 
+              id: student.id, 
+              name: student.name, 
+              email: student.email, 
+              role: 'STUDENT' as AppRole, 
+              collegeId: student.collegeId, 
+              image: null
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Student auth error:', error);
+          return null;
+        }
+      },
+    }),
+
+    // Super Admin authentication (email/password) - no college required
+    CredentialsProvider({
+      id: 'super-admin',
+      name: 'Super Admin',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
@@ -31,43 +147,31 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Try to find user first
-        const user = await db.user.findUnique({ 
-          where: { email: credentials.email } 
-        });
-        
-        if (user && user.isActive && (await verifyPassword(credentials.password, user.password))) {
-          // Validate role before returning
-          if (isValidRole(user.role)) {
+        try {
+          // Find super admin
+          const superAdmin = await db.superAdmin.findUnique({ 
+            where: { email: credentials.email } 
+          });
+          
+          if (superAdmin && superAdmin.isActive && (await verifyPassword(credentials.password, superAdmin.password))) {
             return { 
-              id: user.id, 
-              name: user.name, 
-              email: user.email, 
-              role: user.role as AppRole, 
-              collegeId: user.collegeId, 
+              id: superAdmin.id, 
+              name: superAdmin.name, 
+              email: superAdmin.email, 
+              role: 'SUPER_ADMIN' as AppRole, 
+              collegeId: null, 
               image: null
             };
           }
+          
+          return null;
+        } catch (error) {
+          console.error('Super Admin auth error:', error);
+          return null;
         }
-
-        // If not found, try super admin
-        const superAdmin = await db.superAdmin.findUnique({ 
-          where: { email: credentials.email } 
-        });
-        
-        if (superAdmin && superAdmin.isActive && (await verifyPassword(credentials.password, superAdmin.password))) {
-          return { 
-            id: superAdmin.id, 
-            name: superAdmin.name, 
-            email: superAdmin.email, 
-            role: 'SUPER_ADMIN' as AppRole, 
-            image: null
-          };
-        }
-        
-        return null;
       },
     }),
+
     // Only add Google provider if credentials are available
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [
       GoogleProvider({
@@ -86,6 +190,13 @@ export const authOptions: NextAuthOptions = {
           token.role = customUser.role as AppRole;
         }
         token.collegeId = customUser.collegeId;
+        
+        // Set different token expiration based on role
+        if (customUser.role === 'SUPER_ADMIN' || customUser.role === 'COLLEGE_ADMIN') {
+          token.exp = Math.floor(Date.now() / 1000) + (8 * 60 * 60); // 8 hours for admins
+        } else {
+          token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours for regular users
+        }
       }
       
       // Handle Google OAuth
@@ -131,6 +242,11 @@ export const authOptions: NextAuthOptions = {
           customUser.role = token.role as AppRole;
         }
         customUser.collegeId = token.collegeId as string | undefined;
+        
+        // Add additional security metadata
+        customUser.sessionId = token.jti; // JWT ID for session tracking
+        customUser.issuedAt = token.iat; // Token issued at timestamp
+        customUser.expiresAt = token.exp; // Token expiration timestamp
       }
       return session;
     },

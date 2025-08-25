@@ -1,74 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Building2, CheckCircle, AlertCircle } from 'lucide-react';
+import { MainLayout } from '@/components/layout/main-layout';
+import { ArrowLeft, Building2, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
-export default function CollegeRegistrationPage() {
+function CollegeRegistrationForm() {
   const [formData, setFormData] = useState({
     name: '',
     username: '',
     email: '',
-    address: '',
+    contactPerson: '',
     phone: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
     website: '',
-    adminName: '',
-    adminEmail: '',
-    adminPassword: '',
-    confirmPassword: ''
+    description: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  
   const router = useRouter();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Check username availability when username field changes
-    if (name === 'username' && value.length >= 3) {
-      checkUsernameAvailability(value);
-    }
-  };
-
-  const checkUsernameAvailability = async (username: string) => {
-    try {
-      const response = await fetch('/api/auth/resolve-college', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collegeUsername: username }),
-      });
-      
-      const data = await response.json();
-      setUsernameAvailable(!data.success); // Available if NOT found
-    } catch (err) {
-      setUsernameAvailable(null);
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.adminPassword !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.adminPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (usernameAvailable === false) {
-      setError('Username is already taken');
+    if (!formData.name || !formData.username || !formData.email || !formData.contactPerson) {
+      setError('Please fill in all required fields');
       return;
     }
 
@@ -76,289 +51,291 @@ export default function CollegeRegistrationPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/register-college', {
+      const response = await fetch('/api/colleges', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          username: formData.username,
-          email: formData.email,
-          address: formData.address,
-          phone: formData.phone,
-          website: formData.website,
-          adminName: formData.adminName,
-          adminEmail: formData.adminEmail,
-          adminPassword: formData.adminPassword
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok) {
         setSuccess(true);
-        setError('');
+        // Store college context for immediate use
+        sessionStorage.setItem('selectedCollege', JSON.stringify({
+          id: data.college.id,
+          name: data.college.name,
+          username: data.college.username
+        }));
       } else {
-        setError(data.error || 'Registration failed');
+        setError(data.error || 'Failed to register college');
       }
-    } catch (err) {
-      setError('Failed to connect to server');
+    } catch (error) {
+      setError('An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleContinueToLogin = () => {
+    router.push('/auth/login');
+  };
+
+  const handleBackToHome = () => {
+    router.push('/');
+  };
+
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-2xl mx-auto text-center">
-            <Card>
-              <CardContent className="pt-8">
-                <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  College Registered Successfully!
-                </h1>
-                <p className="text-gray-600 mb-6">
-                  Your college "{formData.name}" has been registered. You can now log in with your admin credentials.
-                </p>
-                <div className="space-y-4">
-                  <Link href="/college/select">
-                    <Button className="w-full">
-                      Go to Login
-                    </Button>
-                  </Link>
-                  <Link href="/college/register">
-                    <Button variant="outline" className="w-full">
-                      Register Another College
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      <MainLayout>
+        <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <div className="flex justify-center mb-4">
+                <CheckCircle className="w-16 h-16 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
+              <p className="text-gray-600 mb-6">
+                Your college "{formData.name}" has been successfully registered with username "{formData.username}".
+              </p>
+              <div className="space-y-3">
+                <Button onClick={handleContinueToLogin} className="w-full">
+                  Continue to Login
+                </Button>
+                <Button onClick={handleBackToHome} variant="outline" className="w-full">
+                  Back to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Home</span>
-          </Link>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">E</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">ExamPlatform</span>
-          </div>
-        </nav>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto">
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Register Your College
-            </h1>
-            <p className="text-gray-600">
-              Join ExamPlatform and start conducting secure online examinations
+            <div className="flex justify-center mb-4">
+              <Building2 className="w-16 h-16 text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register Your Institution</h1>
+            <p className="text-lg text-gray-600">
+              Join our multi-tenant examination platform and start managing exams efficiently
             </p>
           </div>
 
+          {/* Registration Form */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5" />
-                <span>College Information</span>
-              </CardTitle>
+              <CardTitle>College Information</CardTitle>
               <CardDescription>
-                Provide your institution details and create an admin account
+                Please provide the details of your educational institution
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
                   <Alert variant="destructive">
-                    <AlertCircle className="w-4 h-4" />
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
-                {/* College Details */}
+                {/* Basic Information */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">College Name *</Label>
+                    <Label htmlFor="name">Institution Name *</Label>
                     <Input
                       id="name"
                       name="name"
                       type="text"
-                      required
+                      placeholder="Enter institution name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="Your College Name"
+                      required
+                      disabled={isLoading}
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="username">College Username *</Label>
+                    <Label htmlFor="username">Username *</Label>
                     <Input
                       id="username"
                       name="username"
                       type="text"
-                      required
+                      placeholder="Choose a unique username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      placeholder="greenfield_college"
-                      className={usernameAvailable === false ? 'border-red-500' : ''}
+                      required
+                      disabled={isLoading}
                     />
-                    {usernameAvailable === false && (
-                      <p className="text-sm text-red-600">Username is already taken</p>
-                    )}
-                    {usernameAvailable === true && (
-                      <p className="text-sm text-green-600">Username is available</p>
-                    )}
+                    <p className="text-xs text-gray-500">
+                      This will be used by your users to access the platform
+                    </p>
                   </div>
                 </div>
 
+                {/* Contact Information */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">College Email *</Label>
+                    <Label htmlFor="email">Contact Email *</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      required
+                      placeholder="Enter contact email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="admin@college.edu"
+                      required
+                      disabled={isLoading}
                     />
                   </div>
                   
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPerson">Contact Person *</Label>
+                    <Input
+                      id="contactPerson"
+                      name="contactPerson"
+                      type="text"
+                      placeholder="Enter contact person name"
+                      value={formData.contactPerson}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
                       name="phone"
                       type="tel"
+                      placeholder="Enter phone number"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="+1 (555) 123-4567"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      placeholder="Enter website URL"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      type="text"
+                      placeholder="Enter city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State/Province</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      type="text"
+                      placeholder="Enter state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      name="country"
+                      type="text"
+                      placeholder="Enter country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">Full Address</Label>
                   <Input
                     id="address"
                     name="address"
                     type="text"
+                    placeholder="Enter full address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    placeholder="123 College Street, City, State, ZIP"
+                    disabled={isLoading}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
+                  <Label htmlFor="description">Description</Label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    placeholder="Brief description of your institution"
+                    value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="https://www.college.edu"
+                    disabled={isLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
-                {/* Admin Account */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold mb-4">Admin Account</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="adminName">Admin Name *</Label>
-                      <Input
-                        id="adminName"
-                        name="adminName"
-                        type="text"
-                        required
-                        value={formData.adminName}
-                        onChange={handleInputChange}
-                        placeholder="John Doe"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="adminEmail">Admin Email *</Label>
-                      <Input
-                        id="adminEmail"
-                        name="adminEmail"
-                        type="email"
-                        required
-                        value={formData.adminEmail}
-                        onChange={handleInputChange}
-                        placeholder="john.doe@college.edu"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="adminPassword">Password *</Label>
-                      <Input
-                        id="adminPassword"
-                        name="adminPassword"
-                        type="password"
-                        required
-                        value={formData.adminPassword}
-                        onChange={handleInputChange}
-                        placeholder="Minimum 6 characters"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        required
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        placeholder="Confirm your password"
-                      />
-                    </div>
-                  </div>
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button type="submit" size="lg" disabled={isLoading}>
+                    {isLoading ? 'Registering...' : 'Register Institution'}
+                  </Button>
                 </div>
-
-                <Button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  {isLoading ? 'Registering...' : 'Register College'}
-                </Button>
               </form>
             </CardContent>
           </Card>
 
-          {/* Login Link */}
-          <div className="text-center mt-8">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link href="/college/select" className="text-blue-600 hover:underline">
-                Sign in to your college
-              </Link>
-            </p>
+          {/* Back to Home */}
+          <div className="text-center mt-6">
+            <Button onClick={handleBackToHome} variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </MainLayout>
   );
 }
+
+export default function CollegeRegistrationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CollegeRegistrationForm />
+    </Suspense>
+  );
+}
+

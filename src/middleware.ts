@@ -1,86 +1,100 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { verifyAccessToken } from '@/lib/auth/token-service';
-import { AppRole } from '@/types/auth';
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequestWithAuth } from 'next-auth/middleware';
 
-export default async function middleware(req: NextRequest) {
-  try {
-    const pathname = req.nextUrl.pathname;
+export default withAuth(
+  function middleware(req: NextRequestWithAuth) {
+    const { pathname } = req.nextUrl;
+    const { token } = req.nextauth;
+    
+    // If no token, redirect to login
+    if (!token) {
+      return NextResponse.redirect(new URL('/auth/login', req.url));
+    }
 
-    // Skip middleware for static files and API routes
-    if (
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/api') ||
-      pathname.startsWith('/static') ||
-      pathname.includes('.')
-    ) {
+    const userRole = token.role;
+    const collegeId = token.collegeId;
+
+    // Super Admin can access everything
+    if (userRole === 'SUPER_ADMIN') {
       return NextResponse.next();
     }
 
-    // Define role-based access for dashboard paths
-    const roleAccess: Record<string, AppRole[]> = {
-      '/dashboard/superadmin': [AppRole.SUPER_ADMIN],
-      '/dashboard/college-admin': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN],
-      '/dashboard/teacher': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER],
-      '/dashboard/student': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER, AppRole.STUDENT],
-    };
-
-    // Check if the current path requires role-based access
-    const requiredRoles = roleAccess[pathname];
-    if (!requiredRoles) {
-      return NextResponse.next();
-    }
-
-    // Try to get token from NextAuth
-    let token = await getToken({ req });
-    let userRole: AppRole | undefined = token?.role as AppRole | undefined;
-
-    // Fallback to Authorization header for custom tokens
-    if (!userRole) {
-      const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const raw = authHeader.slice('Bearer '.length).trim();
-        const decoded = verifyAccessToken(raw);
-        if (decoded && typeof decoded === 'object' && 'role' in decoded) {
-          userRole = decoded.role as AppRole;
+    // College Admin routes
+    if (pathname.startsWith('/dashboard/college-admin')) {
+      if (userRole !== 'COLLEGE_ADMIN') {
+        return NextResponse.redirect(new URL('/forbidden', req.url));
+      }
+      // Ensure college admin can only access their own college
+      if (collegeId && pathname.includes('/colleges/')) {
+        const urlCollegeId = pathname.split('/colleges/')[1]?.split('/')[0];
+        if (urlCollegeId && urlCollegeId !== collegeId) {
+          return NextResponse.redirect(new URL('/forbidden', req.url));
         }
       }
+      return NextResponse.next();
     }
 
-    // If no valid authentication found, redirect to login
-    if (!userRole) {
-      const loginUrl = new URL('/auth/login', req.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      console.log(`Redirecting unauthenticated user to login from: ${pathname}`);
-      return NextResponse.redirect(loginUrl);
+    // Teacher routes
+    if (pathname.startsWith('/dashboard/teacher')) {
+      if (userRole !== 'TEACHER') {
+        return NextResponse.redirect(new URL('/forbidden', req.url));
+      }
+      // Ensure teacher can only access their own college
+      if (collegeId && pathname.includes('/colleges/')) {
+        const urlCollegeId = pathname.split('/colleges/')[1]?.split('/')[0];
+        if (urlCollegeId && urlCollegeId !== collegeId) {
+          return NextResponse.redirect(new URL('/forbidden', req.url));
+        }
+      }
+      return NextResponse.next();
     }
 
-    // Check if user has required role
-    if (!requiredRoles.includes(userRole)) {
-      console.warn(`Access denied: User with role ${userRole} attempted to access ${pathname} requiring roles: ${requiredRoles.join(', ')}`);
-      const forbiddenUrl = new URL('/forbidden', req.url);
-      return NextResponse.redirect(forbiddenUrl);
+    // Student routes
+    if (pathname.startsWith('/dashboard/student')) {
+      if (userRole !== 'STUDENT') {
+        return NextResponse.redirect(new URL('/forbidden', req.url));
+      }
+      // Ensure student can only access their own college
+      if (collegeId && pathname.includes('/colleges/')) {
+        const urlCollegeId = pathname.split('/colleges/')[1]?.split('/')[0];
+        if (urlCollegeId && urlCollegeId !== collegeId) {
+          return NextResponse.redirect(new URL('/forbidden', req.url));
+        }
+      }
+      return NextResponse.next();
     }
 
-    // Allow access if user has required role
-    console.log(`Access granted: User with role ${userRole} accessing ${pathname}`);
+    // Super Admin specific routes
+    if (pathname.startsWith('/dashboard/superadmin')) {
+      if (userRole !== 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL('/forbidden', req.url));
+      }
+      return NextResponse.next();
+    }
+
+    // Protected API routes
+    if (pathname.startsWith('/api/protected')) {
+      // All authenticated users can access protected API routes
+      // Additional role-based checks can be added here
+      return NextResponse.next();
+    }
+
+    // Default: allow access for authenticated users
     return NextResponse.next();
-  } catch (error) {
-    console.error('Middleware error:', error);
-    
-    // On error, redirect to error page
-    const errorUrl = new URL('/auth/error', req.url);
-    errorUrl.searchParams.set('error', 'middleware_error');
-    return NextResponse.redirect(errorUrl);
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
   }
-}
+);
 
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/api/protected/:path*',
     '/admin/:path*',
-    '/teacher/:path*',
-    '/student/:path*',
   ],
 };
 

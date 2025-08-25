@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model SuperAdmin {
@@ -25,11 +25,16 @@ model SuperAdmin {
 model College {
   id          String   @id @default(cuid())
   name        String
-  username    String   @unique // This will be the college_username from PRD
+  code        String   @unique // College code for identification
   address     String?
+  city        String?
+  state       String?
+  country     String   @default("Pakistan")
   phone       String?
   email       String?
   website     String?
+  subscriptionStatus String @default("TRIAL") // TRIAL, ACTIVE, EXPIRED
+  subscriptionExpiry DateTime?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -41,8 +46,13 @@ model College {
   classes     Class[]
   events      Event[]
   studentProfiles StudentProfile[]
+  notifications Notification[]
+  eventSubscriptions EventSubscription[]
+  eventReminders EventReminder[]
 
   @@map("college")
+  @@index([isActive])
+  @@index([subscriptionStatus])
 }
 
 model User {
@@ -63,14 +73,22 @@ model User {
   enrollments  Enrollment[]
   studentProfile StudentProfile?
   attempts     StudentExamAttempt[]
+  teacherAssignments TeacherClassAssignment[]
+  notifications Notification[]
+  eventSubscriptions EventSubscription[]
+  eventReminders EventReminder[]
 
   @@map("user")
+  @@index([collegeId])
+  @@index([role])
+  @@index([isActive])
+  @@index([email])
 }
 
 model Subject {
   id        String   @id @default(cuid())
   name      String
-  code      String   @unique
+  code      String
   description String?
   credits   Int      @default(3)
   isActive  Boolean  @default(true)
@@ -84,8 +102,13 @@ model Subject {
   class   Class?  @relation(fields: [classId], references: [id])
   exams   Exam[]
   events  Event[]
+  teacherAssignments TeacherClassAssignment[]
 
+  @@unique([collegeId, code])
   @@map("subject")
+  @@index([collegeId])
+  @@index([classId])
+  @@index([isActive])
 }
 
 model Exam {
@@ -98,12 +121,25 @@ model Exam {
   startTime   DateTime
   endTime     DateTime
   isActive    Boolean  @default(true)
+  isPublished Boolean  @default(false)
   subjectId   String
   collegeId   String
   classId     String?
   createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Anti-cheating features
+  enableQuestionShuffling Boolean @default(true)
+  enableTimeLimitPerQuestion Boolean @default(false)
+  timeLimitPerQuestion Int? // in seconds
+  enableBrowserLock Boolean @default(true)
+  enableFullscreenMode Boolean @default(true)
+  enableWebcamMonitoring Boolean @default(false)
+  enableScreenRecording Boolean @default(false)
+  maxAttempts Int @default(1)
+  allowRetakes Boolean @default(false)
+  retakeDelayHours Int @default(24)
 
   // Relations
   subject     Subject      @relation(fields: [subjectId], references: [id])
@@ -114,6 +150,13 @@ model Exam {
   attempts    StudentExamAttempt[]
 
   @@map("exam")
+  @@index([collegeId])
+  @@index([subjectId])
+  @@index([classId])
+  @@index([startTime])
+  @@index([endTime])
+  @@index([isActive])
+  @@index([isPublished])
 }
 
 model Question {
@@ -123,6 +166,8 @@ model Question {
   options     String?  // JSON string for multiple choice
   correctAnswer String
   marks       Int
+  difficulty  QuestionDifficulty @default(MEDIUM)
+  explanation String?
   examId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -133,6 +178,25 @@ model Question {
   answers         StudentAnswer[]
 
   @@map("question")
+  @@index([examId])
+  @@index([type])
+  @@index([difficulty])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0)
+
+  // Relations
+  question Question @relation(fields: [questionId], references: [id])
+  answers  StudentAnswer[]
+
+  @@map("question_option")
+  @@index([questionId])
+  @@index([isCorrect])
 }
 
 model ExamResult {
@@ -154,25 +218,18 @@ model ExamResult {
 
   @@unique([userId, examId])
   @@map("exam_result")
-}
-
-model QuestionOption {
-  id         String   @id @default(cuid())
-  questionId String
-  text       String
-  isCorrect  Boolean  @default(false)
-
-  // Relations
-  question Question @relation(fields: [questionId], references: [id])
-  answers  StudentAnswer[]
-
-  @@map("question_option")
+  @@index([userId])
+  @@index([examId])
+  @@index([score])
+  @@index([percentage])
+  @@index([isCompleted])
 }
 
 model Class {
   id        String   @id @default(cuid())
   name      String
   description String?
+  academicYear String
   collegeId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,15 +240,20 @@ model Class {
   subjects    Subject[]
   exams       Exam[]
   events      Event[]
+  teacherAssignments TeacherClassAssignment[]
 
-  @@unique([collegeId, name])
+  @@unique([collegeId, name, academicYear])
   @@map("class")
+  @@index([collegeId])
+  @@index([academicYear])
 }
 
 model Enrollment {
   id        String   @id @default(cuid())
   userId    String
   classId   String
+  enrollmentDate DateTime @default(now())
+  status    EnrollmentStatus @default(ACTIVE)
   createdAt DateTime @default(now())
 
   // Relations
@@ -200,6 +262,31 @@ model Enrollment {
 
   @@unique([userId, classId])
   @@map("enrollment")
+  @@index([userId])
+  @@index([classId])
+  @@index([status])
+  @@index([enrollmentDate])
+}
+
+model TeacherClassAssignment {
+  id        String   @id @default(cuid())
+  teacherId String
+  classId   String
+  subjectId String
+  assignedAt DateTime @default(now())
+  isActive  Boolean @default(true)
+
+  // Relations
+  teacher User @relation(fields: [teacherId], references: [id])
+  class   Class @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([teacherId, classId, subjectId])
+  @@map("teacher_class_assignment")
+  @@index([teacherId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([isActive])
 }
 
 model StudentProfile {
@@ -208,6 +295,11 @@ model StudentProfile {
   collegeId       String
   rollNo          String
   fatherName      String?
+  motherName      String?
+  dateOfBirth     DateTime?
+  gender          Gender?
+  address         String?
+  phone           String?
   profileImageUrl String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -218,6 +310,9 @@ model StudentProfile {
 
   @@unique([collegeId, rollNo])
   @@map("student_profile")
+  @@index([collegeId])
+  @@index([rollNo])
+  @@index([gender])
 }
 
 model StudentExamAttempt {
@@ -229,6 +324,14 @@ model StudentExamAttempt {
   score      Int      @default(0)
   totalMarks Int      @default(0)
   isCompleted Boolean @default(false)
+  
+  // Anti-cheating tracking
+  ipAddress  String?
+  userAgent  String?
+  browserFingerprint String?
+  suspiciousActivity Boolean @default(false)
+  activityLog String? // JSON string of suspicious activities
+  violationCount Int @default(0)
 
   // Relations
   user    User @relation(fields: [userId], references: [id])
@@ -237,6 +340,14 @@ model StudentExamAttempt {
 
   @@unique([userId, examId])
   @@map("student_exam_attempt")
+  @@index([userId])
+  @@index([examId])
+  @@index([startedAt])
+  @@index([endedAt])
+  @@index([score])
+  @@index([isCompleted])
+  @@index([suspiciousActivity])
+  @@index([violationCount])
 }
 
 model StudentAnswer {
@@ -247,6 +358,8 @@ model StudentAnswer {
   answerText      String?
   isCorrect       Boolean  @default(false)
   marksAwarded    Int      @default(0)
+  timeSpent       Int?     // in seconds
+  answeredAt      DateTime @default(now())
 
   // Relations
   attempt StudentExamAttempt @relation(fields: [attemptId], references: [id])
@@ -255,6 +368,11 @@ model StudentAnswer {
 
   @@unique([attemptId, questionId])
   @@map("student_answer")
+  @@index([attemptId])
+  @@index([questionId])
+  @@index([isCorrect])
+  @@index([marksAwarded])
+  @@index([answeredAt])
 }
 
 model Event {
@@ -263,9 +381,14 @@ model Event {
   description String?
   type        EventType
   scheduledAt DateTime
+  endDateTime DateTime?
+  priority    EventPriority @default(MEDIUM)
+  isRecurring Boolean @default(false)
+  recurrencePattern String? // Cron expression or recurrence rule
   collegeId   String
   classId     String?
   subjectId   String?
+  isActive    Boolean @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -273,8 +396,107 @@ model Event {
   college College @relation(fields: [collegeId], references: [id])
   class   Class?  @relation(fields: [classId], references: [id])
   subject Subject? @relation(fields: [subjectId], references: [id])
+  notifications Notification[]
+  eventReminders EventReminder[]
 
   @@map("event")
+  @@index([collegeId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([scheduledAt])
+  @@index([type])
+  @@index([priority])
+  @@index([isActive])
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  eventId         String?
+  title           String
+  message         String
+  messageTemplate String? // Template identifier for dynamic content
+  type            NotificationType
+  channel         NotificationChannel
+  status          NotificationStatus @default(PENDING)
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  retryCount      Int      @default(0)
+  maxRetries      Int      @default(3)
+  failureReason   String?
+  metadata        Json? // Additional data for the notification
+  collegeId       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  event Event? @relation(fields: [eventId], references: [id])
+  college College @relation(fields: [collegeId], references: [id])
+
+  @@map("notification")
+  @@index([userId])
+  @@index([eventId])
+  @@index([type])
+  @@index([channel])
+  @@index([status])
+  @@index([collegeId])
+  @@index([sentAt])
+  @@index([deliveredAt])
+}
+
+model EventSubscription {
+  id              String   @id @default(cuid())
+  userId          String
+  eventType       EventType
+  notificationChannel NotificationChannel
+  isActive        Boolean  @default(true)
+  preferences     Json? // User preferences for notifications
+  optOutTypes     EventType[] // Event types user doesn't want notifications for
+  collegeId       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  college College @relation(fields: [collegeId], references: [id])
+
+  @@unique([userId, eventType, notificationChannel, collegeId])
+  @@map("event_subscription")
+  @@index([userId])
+  @@index([eventType])
+  @@index([notificationChannel])
+  @@index([isActive])
+  @@index([collegeId])
+}
+
+model EventReminder {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  reminderTime    DateTime
+  leadTime        Int      @default(15) // Minutes before event
+  isSent          Boolean  @default(false)
+  sentAt          DateTime?
+  reminderType    ReminderType @default(EMAIL)
+  escalationLevel Int      @default(1)
+  maxEscalations  Int      @default(3)
+  collegeId       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  event Event @relation(fields: [eventId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  college College @relation(fields: [collegeId], references: [id])
+
+  @@map("event_reminder")
+  @@index([eventId])
+  @@index([userId])
+  @@index([reminderTime])
+  @@index([isSent])
+  @@index([collegeId])
 }
 
 model RefreshToken {
@@ -290,13 +512,18 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id])
 
   @@map("refresh_token")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([revoked])
 }
 
+// Enums
 enum UserRole {
-  STUDENT
-  TEACHER
-  COLLEGE_ADMIN
   SUPER_ADMIN
+  COLLEGE_ADMIN
+  TEACHER
+  STUDENT
 }
 
 enum QuestionType {
@@ -306,8 +533,68 @@ enum QuestionType {
   ESSAY
 }
 
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 enum EventType {
   EXAM
   ASSIGNMENT
+  ANNOUNCEMENT
   OTHER
+}
+
+enum EventPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+  REMINDER
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+}
+
+enum ReminderType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  GRADUATED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
 }

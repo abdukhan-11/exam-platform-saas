@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-08-25T15:41:59.978Z",
+  "summary": {
+    "total": 12,
+    "passed": 8,
+    "failed": 1,
+    "warnings": 3,
+    "successRate": "66.7"
+  },
+  "recommendations": [
+    "Consider addressing warnings to improve schema quality"
+  ]
+}

@@ -1,113 +1,147 @@
-/* eslint-disable no-console */
-const base = 'http://localhost:3000';
+#!/usr/bin/env node
 
-async function post(path, body) {
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+async function testAuth() {
   try {
-    const res = await fetch(base + path, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body ?? {}),
+    console.log('🧪 Testing Authentication System...\n');
+
+    // Test 1: Check if database is accessible
+    console.log('1. Testing database connection...');
+    await prisma.$connect();
+    console.log('✅ Database connection successful\n');
+
+    // Test 2: Check if colleges exist
+    console.log('2. Testing college data...');
+    const colleges = await prisma.college.findMany({
+      take: 5,
+      select: { id: true, name: true, username: true, isActive: true }
     });
     
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`POST ${path} failed:`, res.status, errorText);
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    if (colleges.length === 0) {
+      console.log('⚠️  No colleges found in database');
+      console.log('   You may need to run: npm run prisma:seed');
+    } else {
+      console.log(`✅ Found ${colleges.length} colleges:`);
+      colleges.forEach(college => {
+        console.log(`   - ${college.name} (${college.username}) - ${college.isActive ? 'Active' : 'Inactive'}`);
+      });
     }
-    
-    return res.json();
-  } catch (error) {
-    console.error(`POST ${path} error:`, error.message);
-    throw error;
-  }
-}
+    console.log('');
 
-async function call(path, token) {
-  try {
-    const headers = {};
-    if (token) {
-      headers.Authorization = 'Bearer ' + token;
+    // Test 3: Check if users exist
+    console.log('3. Testing user data...');
+    const users = await prisma.user.findMany({
+      take: 5,
+      select: { id: true, name: true, email: true, role: true, collegeId: true, isActive: true }
+    });
+    
+    if (users.length === 0) {
+      console.log('⚠️  No users found in database');
+      console.log('   You may need to run: npm run prisma:seed');
+    } else {
+      console.log(`✅ Found ${users.length} users:`);
+      users.forEach(user => {
+        console.log(`   - ${user.name} (${user.email}) - ${user.role} - College: ${user.collegeId || 'None'}`);
+      });
     }
+    console.log('');
 
-    const res = await fetch(base + path, { headers });
-    const text = await res.text();
+    // Test 4: Check if super admins exist
+    console.log('4. Testing super admin data...');
+    const superAdmins = await prisma.superAdmin.findMany({
+      take: 3,
+      select: { id: true, name: true, email: true, isActive: true }
+    });
     
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
+    if (superAdmins.length === 0) {
+      console.log('⚠️  No super admins found in database');
+      console.log('   You may need to run: npm run prisma:seed');
+    } else {
+      console.log(`✅ Found ${superAdmins.length} super admins:`);
+      superAdmins.forEach(admin => {
+        console.log(`   - ${admin.name} (${admin.email}) - ${admin.isActive ? 'Active' : 'Inactive'}`);
+      });
     }
-    
-    const status = res.status;
-    const success = status >= 200 && status < 300;
-    
-    console.log(`${path} ${status} ${success ? '✅' : '❌'}`, data);
-    return { status, success, data };
-  } catch (error) {
-    console.error(`GET ${path} error:`, error.message);
-    return { status: 0, success: false, error: error.message };
-  }
-}
+    console.log('');
 
-async function runTests() {
-  console.log('🚀 Starting Authentication and RBAC Tests...\n');
-  
-  try {
-    // Test 1: Generate tokens for different roles
-    console.log('📝 Generating test tokens...');
-    const roles = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT'];
-    const tokens = {};
+    // Test 5: Test password hashing
+    console.log('5. Testing password hashing...');
+    const testPassword = 'test123';
+    const hashedPassword = await bcrypt.hash(testPassword, 10);
+    const isMatch = await bcrypt.compare(testPassword, hashedPassword);
     
-    for (const role of roles) {
-      try {
-        const out = await post('/api/auth/debug-token', { 
-          id: role.toLowerCase() + '1', 
-          role 
-        });
-        tokens[role] = out.accessToken;
-        console.log(`✅ Generated token for ${role}`);
-      } catch (error) {
-        console.error(`❌ Failed to generate token for ${role}:`, error.message);
-        return;
+    if (isMatch) {
+      console.log('✅ Password hashing and verification working');
+    } else {
+      console.log('❌ Password hashing failed');
+    }
+    console.log('');
+
+    // Test 6: Test college username resolution
+    console.log('6. Testing college username resolution...');
+    if (colleges.length > 0) {
+      const testCollege = colleges[0];
+      const foundCollege = await prisma.college.findUnique({
+        where: { username: testCollege.username, isActive: true },
+        select: { id: true, name: true, username: true, isActive: true }
+      });
+      
+      if (foundCollege) {
+        console.log(`✅ College resolution working for: ${foundCollege.name} (${foundCollege.username})`);
+      } else {
+        console.log(`❌ College resolution failed for: ${testCollege.username}`);
       }
+    } else {
+      console.log('⚠️  Skipping college resolution test - no colleges available');
+    }
+    console.log('');
+
+    // Test 7: Test user authentication queries
+    console.log('7. Testing user authentication queries...');
+    if (users.length > 0 && colleges.length > 0) {
+      const testUser = users[0];
+      const testCollege = colleges[0];
+      
+      const foundUser = await prisma.user.findFirst({
+        where: { 
+          email: testUser.email,
+          collegeId: testUser.collegeId || testCollege.id,
+          isActive: true
+        }
+      });
+      
+      if (foundUser) {
+        console.log(`✅ User authentication query working for: ${foundUser.name} (${foundUser.email})`);
+      } else {
+        console.log(`❌ User authentication query failed for: ${testUser.email}`);
+      }
+    } else {
+      console.log('⚠️  Skipping user authentication test - insufficient data');
+    }
+    console.log('');
+
+    console.log('🎉 Authentication system test completed!');
+    
+    if (colleges.length === 0 || users.length === 0) {
+      console.log('\n📝 Next steps:');
+      console.log('   1. Run: npm run prisma:seed');
+      console.log('   2. Start the development server: npm run dev');
+      console.log('   3. Test the login forms at /auth/login and /auth/login-student');
     }
 
-    console.log('\n🔐 Testing protected routes...\n');
-
-    // Test 2: Test successful access with correct roles
-    console.log('✅ Testing successful access patterns:');
-    await call('/api/protected/superadmin', tokens.SUPER_ADMIN);
-    await call('/api/protected/college-admin', tokens.SUPER_ADMIN);
-    await call('/api/protected/college-admin', tokens.COLLEGE_ADMIN);
-    await call('/api/protected/teacher', tokens.TEACHER);
-    await call('/api/protected/student', tokens.STUDENT);
-
-    console.log('\n❌ Testing forbidden access patterns:');
-    // Test 3: Test forbidden access (student trying to access superadmin)
-    await call('/api/protected/superadmin', tokens.STUDENT);
-
-    console.log('\n🔒 Testing unauthorized access:');
-    // Test 4: Test unauthorized access (no token)
-    await call('/api/protected/superadmin');
-
-    console.log('\n🧪 Testing invalid tokens:');
-    // Test 5: Test invalid token
-    await call('/api/protected/superadmin', 'invalid-token');
-
-    console.log('\n📊 Test Summary:');
-    console.log('✅ All tests completed successfully!');
-    console.log('🔐 RBAC middleware is working correctly');
-    console.log('🚫 Unauthorized access is properly blocked');
-    console.log('🚷 Forbidden access is properly blocked');
-    
   } catch (error) {
-    console.error('\n💥 Test suite failed:', error.message);
+    console.error('❌ Test failed:', error);
     process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-// Run tests
-runTests().catch(console.error);
+// Run the test
+testAuth().catch(console.error);
 
 

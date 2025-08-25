@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -10,30 +10,81 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MainLayout } from '@/components/layout/main-layout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Building2 } from 'lucide-react';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
+  const [rollNo, setRollNo] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('admin-teacher');
+  const [college, setCollege] = useState<{ id: string; name: string; username: string } | null>(null);
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
+  // Load college context from sessionStorage on component mount
+  useEffect(() => {
+    const storedCollege = sessionStorage.getItem('selectedCollege');
+    if (storedCollege) {
+      try {
+        const collegeData = JSON.parse(storedCollege);
+        setCollege(collegeData);
+      } catch (error) {
+        console.error('Failed to parse stored college data:', error);
+        sessionStorage.removeItem('selectedCollege');
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!college) {
+      setError('Please select a college first');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+      let result;
+      
+      if (activeTab === 'admin-teacher') {
+        if (!email || !password) {
+          setError('Email and password are required');
+          return;
+        }
+        
+        result = await signIn('admin-teacher', {
+          email,
+          password,
+          collegeUsername: college.username,
+          redirect: false,
+        });
+      } else if (activeTab === 'student') {
+        if (!rollNo || !password) {
+          setError('Roll number and password are required');
+          return;
+        }
+        
+        result = await signIn('student', {
+          rollNo,
+          password,
+          collegeUsername: college.username,
+          redirect: false,
+        });
+      } else {
+        setError('Invalid authentication method');
+        return;
+      }
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Invalid credentials');
       } else if (result?.ok) {
         router.push(callbackUrl);
       }
@@ -44,70 +95,183 @@ function LoginForm() {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setEmail('');
+    setRollNo('');
+    setPassword('');
+    setError('');
+  };
+
+  const handleBackToCollegeSelection = () => {
+    sessionStorage.removeItem('selectedCollege');
+    router.push('/');
+  };
+
+  // If no college is selected, redirect to home
+  if (!college) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <Alert>
+                <AlertDescription>
+                  No college selected. Please go back to select your institution.
+                </AlertDescription>
+              </Alert>
+              <Button 
+                onClick={handleBackToCollegeSelection} 
+                className="mt-4 w-full"
+                variant="outline"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to College Selection
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <div className="flex items-center space-x-2 mb-2">
+              <Building2 className="w-5 h-5 text-blue-600" />
+              <span className="text-sm text-blue-600 font-medium">{college.username}</span>
+            </div>
+            <CardTitle>Sign In to {college.name}</CardTitle>
             <CardDescription>
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </Button>
-              
-              <div className="text-center space-y-2">
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot your password?
-                </Link>
-                
-                <div className="text-sm text-muted-foreground">
-                  Don't have an account?{' '}
-                  <Link href="/auth/register" className="text-primary hover:underline">
-                    Sign up
-                  </Link>
+            {/* College Info Display */}
+            <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-900">{college.name}</p>
+                  <p className="text-xs text-blue-700">@{college.username}</p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackToCollegeSelection}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Change
+                </Button>
               </div>
-            </form>
+            </div>
+
+            {/* Authentication Tabs */}
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="admin-teacher">Admin/Teacher</TabsTrigger>
+                <TabsTrigger value="student">Student</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="admin-teacher" className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Signing In...' : 'Sign In'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="student" className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="rollNo">Roll Number</Label>
+                    <Input
+                      id="rollNo"
+                      type="text"
+                      placeholder="Enter your roll number"
+                      value={rollNo}
+                      onChange={(e) => setRollNo(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="studentPassword">Password</Label>
+                    <Input
+                      id="studentPassword"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Signing In...' : 'Sign In'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="text-center space-y-2 mt-6">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot your password?
+              </Link>
+              
+              <div className="text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link href="/auth/register" className="text-primary hover:underline">
+                  Sign up
+                </Link>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

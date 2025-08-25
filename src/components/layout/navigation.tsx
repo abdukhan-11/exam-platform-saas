@@ -1,10 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 export function Navigation() {
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    router.push('/');
+  };
+
+  const handleSignIn = () => {
+    router.push('/auth/login');
+  };
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -67,10 +77,19 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleSignIn}
+            >
               Sign In
             </Button>
-            <Button size="sm">Get Started</Button>
+            <Button 
+              size="sm"
+              onClick={handleGetStarted}
+            >
+              Get Started
+            </Button>
           </div>
         </div>
       </div>
