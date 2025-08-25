@@ -1,0 +1,112 @@
+# Task ID: 2
+# Title: Design and Implement Database Schema with Prisma
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Create comprehensive PostgreSQL database schema with multi-tenant row-level isolation using Prisma ORM
+# Details:
+Design Prisma schema with all entities: College, User (with roles), StudentProfile, Class, Subject, Exam, Question, QuestionOption, StudentExamAttempt, StudentAnswer, Enrollment, TeacherClassAssignment. Implement collegeId foreign keys on all tenant-scoped tables. Set up proper indexes for performance. Configure Prisma client with connection pooling. Create initial migration files and seed data for development.
+
+# Test Strategy:
+Run prisma generate and prisma db push successfully. Verify all relationships work correctly. Test row-level isolation by querying with different collegeId values. Validate foreign key constraints and cascading deletes work as expected.
+
+# Subtasks:
+## 1. Design Core Entity Schema (College, User, StudentProfile) [pending]
+### Dependencies: None
+### Description: Create Prisma schema for foundational entities including College, User with role-based authentication, and StudentProfile with proper relationships and multi-tenant isolation
+### Details:
+Define College entity as tenant root with subscription fields. Create User entity with role enum (SUPER_ADMIN, COLLEGE_ADMIN, TEACHER, STUDENT) and collegeId foreign key. Design StudentProfile entity linked to User with academic information. Implement proper field types, constraints, and validation rules. Add unique constraints and indexes for performance.
+<info added on 2025-08-25T10:08:10.859Z>
+Implement comprehensive unit tests using Jest and Prisma test environment for all schema entities. Create test cases for College entity validation including subscription field constraints and tenant isolation. Add User entity tests covering role enum validation, collegeId foreign key relationships, and unique constraint enforcement. Design StudentProfile entity tests for proper User linkage and academic field validation. Set up integration tests for multi-tenant data isolation by creating test data across different colleges and verifying query results. Add performance tests for database indexes on frequently queried fields like collegeId, email, and rollNo. Create test fixtures and factories for consistent test data generation. Implement database transaction rollback for test cleanup. Add validation tests for all field constraints, data types, and relationship cascading behaviors. Include edge case testing for boundary values and invalid data scenarios.
+</info added on 2025-08-25T10:08:10.859Z>
+
+## 2. Design Academic Structure Schema (Class, Subject, Enrollment) [pending]
+### Dependencies: 2.1
+### Description: Implement academic hierarchy entities with proper relationships and multi-tenant isolation for class management and student enrollment
+### Details:
+Create Class entity with collegeId, name, and academic year fields. Design Subject entity with class relationships and teacher assignments. Implement Enrollment entity for student-class relationships with enrollment date and status. Add TeacherClassAssignment entity for teacher-class-subject mapping. Include proper foreign key constraints and cascading rules.
+<info added on 2025-08-25T10:08:18.782Z>
+Implement comprehensive unit tests for each entity model using Jest and Prisma test database. Create integration tests to verify multi-tenant isolation by testing data access across different collegeId values. Add validation tests for all foreign key constraints and cascading delete operations. Implement performance tests for complex queries involving joins between Class, Subject, Enrollment, and TeacherClassAssignment entities. Create test fixtures with sample data for different academic scenarios including multiple classes per college, cross-subject enrollments, and teacher assignments. Add database migration tests to ensure schema changes don't break existing relationships. Include edge case testing for enrollment capacity limits, duplicate teacher assignments, and orphaned records cleanup. Set up automated test pipeline with database seeding and teardown procedures.
+</info added on 2025-08-25T10:08:18.782Z>
+
+## 3. Design Exam and Question Schema with Anti-Cheating Features [pending]
+### Dependencies: 2.2
+### Description: Create comprehensive exam structure with questions, options, and built-in anti-cheating configuration fields
+### Details:
+Design Exam entity with timing, randomization settings, and anti-cheating flags. Create Question entity with multiple types (MCQ, True/False, Short Answer) and difficulty levels. Implement QuestionOption entity for MCQ choices with correct answer marking. Add fields for question shuffling, time limits per question, and cheating prevention settings. Include exam-class relationships and access controls.
+<info added on 2025-08-25T10:08:27.235Z>
+Implement comprehensive testing strategy including unit tests for schema validation, integration tests for anti-cheating feature functionality, and end-to-end tests for exam flow. Create test cases for question randomization algorithms, timer accuracy, and cheating detection triggers. Add performance testing for large question sets and concurrent exam sessions. Enhance implementation with advanced anti-cheating features including browser fingerprinting, keystroke pattern analysis, and suspicious behavior scoring algorithms. Implement exam session tokens with cryptographic validation, question delivery encryption, and tamper-proof answer submission mechanisms. Add database triggers for audit logging of all exam-related activities and automated flagging of anomalous patterns. Include backup and recovery procedures for exam data integrity during system failures.
+</info added on 2025-08-25T10:08:27.235Z>
+
+## 4. Design Student Assessment Schema (Attempts, Answers, Results) [pending]
+### Dependencies: 2.3
+### Description: Implement student exam attempt tracking with detailed answer recording and result calculation capabilities
+### Details:
+Create StudentExamAttempt entity tracking exam sessions with start/end times, IP addresses, and cheating violation logs. Design StudentAnswer entity for individual question responses with timestamps. Add result calculation fields including scores, percentages, and ranking data. Implement attempt limits and retake policies. Include detailed audit trail for exam integrity.
+<info added on 2025-08-25T10:08:36.683Z>
+Develop comprehensive testing strategy including unit tests for schema validation using Jest and Prisma test database. Create integration tests for StudentExamAttempt lifecycle covering session creation, answer recording, and result calculation workflows. Implement performance tests for concurrent exam attempts and bulk answer insertions. Add data integrity tests validating foreign key constraints, cascade operations, and audit trail consistency. Create mock data generators for realistic testing scenarios with various exam types and student populations. Enhance implementation with optimistic locking for concurrent answer updates, database triggers for automatic timestamp updates, and stored procedures for complex result calculations. Add database views for performance analytics and reporting queries. Implement connection pooling configuration for high-concurrency exam scenarios. Create backup and recovery procedures for critical assessment data. Add monitoring and alerting for database performance metrics during peak exam periods.
+</info added on 2025-08-25T10:08:36.683Z>
+
+## 5. Implement Multi-Tenant Row-Level Security and Indexes [pending]
+### Dependencies: 2.4
+### Description: Configure comprehensive multi-tenant isolation with row-level security policies and performance optimization indexes
+### Details:
+Add collegeId foreign keys to all tenant-scoped entities with proper constraints. Create composite indexes on collegeId + frequently queried fields. Implement database-level row-level security policies for tenant isolation. Add performance indexes for exam queries, student lookups, and analytics. Configure proper cascading delete rules and referential integrity.
+<info added on 2025-08-25T10:08:45.103Z>
+Develop comprehensive testing strategy including unit tests for RLS policies using Jest and Prisma test database, integration tests for multi-tenant data isolation scenarios, performance benchmarking for composite indexes under load, and automated testing of cascading delete operations. Create test fixtures with multiple college tenants and verify complete data separation. Implement database migration testing to ensure schema changes maintain RLS integrity. Add monitoring queries to validate index usage and query performance metrics. Create rollback procedures for RLS policy changes and document security audit checklist for tenant isolation verification.
+</info added on 2025-08-25T10:08:45.103Z>
+
+## 6. Configure Prisma Client with Connection Pooling and Optimization [pending]
+### Dependencies: 2.5
+### Description: Set up Prisma client configuration with connection pooling, query optimization, and multi-tenant query helpers
+### Details:
+Configure Prisma client with connection pooling for production scalability. Set up database connection limits and timeout configurations. Create custom Prisma client extensions for automatic collegeId filtering. Implement query optimization settings and logging configuration. Add database connection health checks and monitoring setup.
+<info added on 2025-08-25T10:08:56.042Z>
+Develop comprehensive testing strategy including unit tests for connection pool configuration using Jest and Prisma test environment. Create integration tests to validate connection limits under load using concurrent database operations. Implement performance benchmarks to measure query execution times with different pool sizes. Add automated tests for custom Prisma client extensions to ensure collegeId filtering works correctly across all database operations. Create mock scenarios for connection timeout handling and recovery mechanisms. Enhance implementation with advanced connection pooling configurations including connection lifetime management, idle connection cleanup, and dynamic pool sizing based on application load. Add detailed error handling for connection pool exhaustion scenarios with proper fallback mechanisms. Implement connection pool metrics collection and alerting thresholds for production monitoring. Create comprehensive documentation for connection pool tuning parameters and troubleshooting guides for common connection issues.
+</info added on 2025-08-25T10:08:56.042Z>
+
+## 7. Create Migration Files and Database Setup Scripts [pending]
+### Dependencies: 2.6
+### Description: Generate initial Prisma migrations and create automated database setup scripts for different environments
+### Details:
+Generate initial Prisma migration files from schema definition. Create database setup scripts for development, staging, and production environments. Implement migration rollback procedures and version control. Add database backup and restore scripts. Create environment-specific configuration files for different deployment scenarios.
+<info added on 2025-08-25T10:09:06.722Z>
+Develop comprehensive testing strategy including unit tests for migration file generation using Jest, integration tests for database setup scripts across all environments, and end-to-end tests for migration rollback procedures. Create automated test suites that validate schema changes, foreign key constraints, and data integrity during migrations. Implement test fixtures and mock data for testing migration scenarios. Add detailed error handling and logging mechanisms to migration files with specific error codes and recovery procedures. Enhance database setup scripts with pre-flight checks for database connectivity, version compatibility, and required permissions. Include automated validation scripts that verify successful migration completion and schema consistency. Create comprehensive documentation for migration troubleshooting and manual intervention procedures. Add performance monitoring hooks to track migration execution times and identify bottlenecks during large data migrations.
+</info added on 2025-08-25T10:09:06.722Z>
+
+## 8. Create Comprehensive Seed Data and Testing Framework [pending]
+### Dependencies: 2.7
+### Description: Develop seed data generation for development and testing with comprehensive database validation and testing utilities
+### Details:
+Create seed scripts with sample colleges, users, classes, subjects, and exams for development. Implement realistic test data generation with proper relationships. Add database validation scripts to verify schema integrity and constraints. Create testing utilities for multi-tenant isolation verification. Implement automated tests for all entity relationships and cascading operations.
+<info added on 2025-08-25T10:09:14.726Z>
+Develop comprehensive testing strategy including unit tests for seed data generation functions, integration tests for database operations, and end-to-end tests for multi-tenant data isolation. Create performance benchmarks for seed data insertion with large datasets. Implement data consistency validation tests that verify referential integrity across all entity relationships. Add automated test suites for edge cases including orphaned records, circular dependencies, and constraint violations. Create mock data factories with configurable parameters for different testing scenarios. Implement database state management utilities for test setup and teardown. Add comprehensive logging and error reporting for seed operations with detailed failure analysis. Create documentation for testing procedures and troubleshooting common seed data issues.
+</info added on 2025-08-25T10:09:14.726Z>
+
+## 9. Implement Award List Generation and Analytics Schema [pending]
+### Dependencies: 2.8
+### Description: Create comprehensive schema for award list generation, student performance tracking, and analytics reporting with multi-tenant support
+### Details:
+Design AwardList entity with different types (EXAM_SPECIFIC, SUBJECT_CUMULATIVE, CLASS_OVERALL) and ranking algorithms. Implement StudentPerformance entity for tracking historical performance metrics. Create AnalyticsEvent entity for logging user actions and system events. Add PerformanceMetrics entity for storing calculated statistics and trends. Include proper indexing for fast ranking queries and performance calculations.
+<info added on 2025-08-25T10:09:42.104Z>
+Develop comprehensive testing framework including unit tests for ranking algorithm accuracy using Jest, integration tests for multi-tenant data isolation across different award types, and performance benchmarks for large-scale ranking queries with 10,000+ students. Create test fixtures with realistic student performance data spanning multiple exam cycles and subjects. Implement automated testing for analytics event logging accuracy and data integrity validation. Add load testing scenarios for concurrent award list generation requests. Enhance implementation with optimized database queries using compound indexes on (collegeId, examId, subjectId, score) for faster ranking calculations. Include caching strategy for frequently accessed award lists using Redis with TTL-based invalidation. Add batch processing capabilities for large-scale performance metric calculations with queue-based job processing. Implement real-time analytics dashboard updates using WebSocket connections for live performance tracking.
+</info added on 2025-08-25T10:09:42.104Z>
+
+## 10. Implement Event Management and Notification Schema [pending]
+### Dependencies: 2.9
+### Description: Create schema for upcoming events, exam schedules, and notification system with multi-tenant support and real-time capabilities
+### Details:
+Design Event entity for managing upcoming exams, assignments, and academic activities per class and subject. Implement Notification entity for user notifications with delivery status tracking. Create EventSubscription entity for user preferences and notification settings. Add EventReminder entity for scheduled reminders and alerts. Include proper scheduling fields, notification channels, and delivery tracking mechanisms.
+<info added on 2025-08-25T10:09:57.088Z>
+Develop comprehensive testing strategy including unit tests for Event, Notification, EventSubscription, and EventReminder entities using Jest and Prisma test database. Create integration tests for event scheduling workflows, notification delivery chains, and reminder triggering mechanisms. Implement end-to-end tests for multi-tenant event isolation and cross-college notification prevention. Add performance tests for bulk notification processing and event query optimization. Enhance implementation with detailed field specifications: Event entity should include startDateTime, endDateTime, eventType enum (EXAM, ASSIGNMENT, ANNOUNCEMENT), priority levels, and recurring event patterns. Notification entity requires messageTemplate support, delivery channels (EMAIL, SMS, PUSH), retry mechanisms, and failure tracking. EventSubscription needs granular preference controls for event types, notification timing preferences, and opt-out capabilities. EventReminder requires configurable lead times, escalation rules, and batch processing capabilities for high-volume scenarios. Add database indexes for efficient querying by date ranges, user preferences, and delivery status. Implement proper error handling for notification failures and event scheduling conflicts.
+</info added on 2025-08-25T10:09:57.088Z>
+
+## 11. Final Schema Validation and Performance Optimization [pending]
+### Dependencies: 2.10
+### Description: Perform comprehensive schema validation, performance testing, and optimization to ensure production readiness
+### Details:
+Execute end-to-end testing of all database operations across entities. Validate multi-tenant isolation with stress testing. Perform performance benchmarking with realistic data volumes. Optimize database queries and indexes based on performance analysis. Create production deployment checklist and monitoring setup. Implement automated health checks and alerting systems.
+<info added on 2025-08-25T10:10:07.076Z>
+Develop comprehensive testing strategy including unit tests for Prisma models using Jest and @prisma/client test utilities. Create integration tests for complex multi-table operations and transaction scenarios. Implement automated performance regression testing with baseline metrics for query execution times. Add database migration testing pipeline to validate schema changes across different PostgreSQL versions. Create comprehensive load testing scenarios simulating concurrent user operations across multiple tenants. Implement automated index effectiveness analysis and query plan optimization recommendations. Add detailed performance profiling for N+1 query detection and resolution. Create comprehensive rollback and disaster recovery testing procedures. Implement automated data integrity validation checks across all entity relationships. Add memory usage profiling and connection pool optimization testing. Create detailed documentation for performance benchmarks and optimization guidelines for future development.
+</info added on 2025-08-25T10:10:07.076Z>
+

@@ -13,13 +13,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { id = 'debug-user', role = 'SUPER_ADMIN' } = body as { 
+    const { id = 'debug-user', role = AppRole.SUPER_ADMIN } = body as { 
       id?: string; 
       role?: AppRole 
     };
 
     // Validate role
-    const validRoles: AppRole[] = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT'];
+    const validRoles: AppRole[] = [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER, AppRole.STUDENT];
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         error: 'Invalid role specified',

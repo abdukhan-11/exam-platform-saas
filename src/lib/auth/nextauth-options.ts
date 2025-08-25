@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth/password';
-import { UserJWT, AppRole } from '@/types/auth';
+import { UserJWT, AppRole, isValidRole } from '@/types/auth';
 import { UserRole } from '@prisma/client';
 import { env } from '@/lib/env';
 
@@ -37,14 +37,17 @@ export const authOptions: NextAuthOptions = {
         });
         
         if (user && user.isActive && (await verifyPassword(credentials.password, user.password))) {
-          return { 
-            id: user.id, 
-            name: user.name, 
-            email: user.email, 
-            role: user.role, 
-            collegeId: user.collegeId, 
-            image: user.avatar 
-          };
+          // Validate role before returning
+          if (isValidRole(user.role)) {
+            return { 
+              id: user.id, 
+              name: user.name, 
+              email: user.email, 
+              role: user.role as AppRole, 
+              collegeId: user.collegeId, 
+              image: null
+            };
+          }
         }
 
         // If not found, try super admin
@@ -58,7 +61,7 @@ export const authOptions: NextAuthOptions = {
             name: superAdmin.name, 
             email: superAdmin.email, 
             role: 'SUPER_ADMIN' as AppRole, 
-            image: null // SuperAdmin doesn't have avatar field
+            image: null
           };
         }
         
@@ -79,7 +82,9 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         // Type assertion for custom user properties
         const customUser = user as { role?: AppRole; collegeId?: string };
-        token.role = customUser.role as AppRole;
+        if (isValidRole(customUser.role || '')) {
+          token.role = customUser.role as AppRole;
+        }
         token.collegeId = customUser.collegeId;
       }
       
@@ -93,7 +98,9 @@ export const authOptions: NextAuthOptions = {
         
         if (existingUser) {
           token.id = existingUser.id;
-          token.role = existingUser.role as AppRole;
+          if (isValidRole(existingUser.role)) {
+            token.role = existingUser.role as AppRole;
+          }
           token.collegeId = existingUser.collegeId;
         } else {
           // Create new user for Google OAuth
@@ -107,7 +114,9 @@ export const authOptions: NextAuthOptions = {
             },
           });
           token.id = newUser.id;
-          token.role = newUser.role as AppRole;
+          if (isValidRole(newUser.role)) {
+            token.role = newUser.role as AppRole;
+          }
         }
       }
       
@@ -118,7 +127,9 @@ export const authOptions: NextAuthOptions = {
         // Type assertion for custom session user properties
         const customUser = session.user as any;
         customUser.id = token.id as string;
-        customUser.role = token.role as AppRole;
+        if (isValidRole(token.role as string)) {
+          customUser.role = token.role as AppRole;
+        }
         customUser.collegeId = token.collegeId as string | undefined;
       }
       return session;

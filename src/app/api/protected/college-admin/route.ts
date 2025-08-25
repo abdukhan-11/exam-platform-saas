@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/rbac';
 import { getToken } from 'next-auth/jwt';
+import { AppRole } from '@/types/auth';
 
 async function handler(req: NextRequest) {
   try {
@@ -29,5 +30,5 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const GET = withRole(handler, ['SUPER_ADMIN', 'COLLEGE_ADMIN']);
+export const GET = withRole(handler, [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN]);
 

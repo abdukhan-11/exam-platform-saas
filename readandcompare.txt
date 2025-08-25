@@ -1,0 +1,361 @@
+# Simplified Exam SaaS Platform - Product Requirements Document
+
+## Overview
+A clean, focused multi-tenant exam platform where colleges register with unique usernames, teachers manage classes and students, and students take timed exams with automatic grading and record keeping.
+
+## Core User Flow
+
+### Landing Page → College Entry
+1. **Landing Page** with "Get Started" button
+2. **College Username Input** (e.g., "st_marys_college", "govt_college_123")
+3. **Two Login Options**:
+   - Login as Admin/Teacher
+   - Login as Student
+
+### Teacher/Admin Workflow
+1. **Login** with email/password (created during college registration)
+2. **Dashboard Overview**:
+   - **Classes Grid**: Class 1st (25 students), Class 2nd (30 students)
+   - **Recent Activity**: "15 students completed Math Test", "Physics exam scheduled for tomorrow"
+   - **Quick Actions**: Add Student, Create Exam, View Results
+   - **Upcoming Events**: All scheduled exams across classes
+3. **Class Management** (per class):
+   - **Student List**: View all students with Roll No, Name, Father Name
+   - **Add Students**: Bulk or individual with auto-generated Roll No + Password
+   - **Student Profiles**: Edit details, reset passwords, view performance
+   - **Class Statistics**: Average performance, attendance, rankings
+4. **Subject Management** (per class):
+   - **Create Subjects**: Physics, Math, Urdu for specific classes
+   - **Assign Teachers**: Link teachers to subjects (if multiple teachers)
+   - **Subject Dashboard**: All exams, average marks, student performance
+   - **Award Lists**: Generate class rankings per subject or overall
+5. **Exam Creation & Management**:
+   - **Create Exam**: Select Class → Subject → Add Questions → Set Timer
+   - **Question Bank**: Save frequently used questions for reuse  
+   - **Schedule Exams**: Set date/time, enable for specific students
+   - **Monitor Live Exams**: See who's taking, time remaining, completion status
+   - **Review Results**: Individual student results, class statistics, export data
+
+### Student Workflow
+1. **Login** with Student ID + Password (provided by teacher)
+2. **Dashboard** showing:
+   - **Subject Cards**: Physics (85% avg), Math (92% avg), Urdu (78% avg) with recent marks
+   - **Class Ranking**: "You are 5th out of 30 students in Class 1st"
+   - **Upcoming Events**: "Math Test - Tomorrow 2:00 PM", "Physics Assignment Due - Friday"
+   - **Recent Results**: Last 5 exam results with marks and percentages
+   - **Profile Section**: Name, Father Name, Profile Picture, Password Change
+3. **Take Exam**:
+   - Secure exam interface with timer countdown
+   - Question navigation (Previous/Next buttons)
+   - Auto-save answers, auto-submit when time ends
+   - Full-screen mode with anti-cheat monitoring
+   - Immediate results: "You scored 85/100 (85%) in Physics Test"
+4. **Subject Performance View**:
+   - All marks for specific subject (Physics: Test 1: 80%, Test 2: 90%)
+   - Subject-wise class ranking
+   - Performance trends and improvement areas
+
+## Technical Architecture (Simplified)
+
+### Complete Data Models (Single Database with Row-Level Isolation)
+```typescript
+// Single database with collegeId separation - much simpler and more maintainable
+interface College {
+  id: string;
+  username: string; // Unique identifier (st_marys_college)
+  name: string;
+  email: string;
+  logo?: string;
+  subscriptionTier: 'FREE' | 'PREMIUM';
+  createdAt: Date;
+}
+
+interface User {
+  id: string;
+  collegeId: string; // Links to specific college
+  role: 'COLLEGE_ADMIN' | 'TEACHER' | 'STUDENT';
+  email?: string; // For teachers/admins
+// Roll Number Generation: Auto-generated format "YYYY-XXX" where YYYY is current year and XXX is sequential number per college
+// Example: "2024-001", "2024-002", etc.
+// Default Password: Combination of student name + "123" or custom teacher-specified
+  name: string;
+  fatherName?: string; // For students
+  password: string;
+  classId?: string; // For students
+  profileImage?: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+interface Class {
+  id: string;
+  collegeId: string;
+  name: string; // "Class 1st", "Class 2nd", "Class 3rd"
+  description?: string;
+  classTeacherId?: string; // Main class teacher
+  academicYear: string; // "2024-2025"
+  isActive: boolean;
+}
+
+interface Subject {
+  id: string;
+  collegeId: string;
+  classId: string;
+  name: string; // "Physics", "Mathematics", "Urdu"
+  code?: string; // "PHY101", "MATH101"
+  teacherId: string; // Assigned teacher
+  totalMarks?: number; // Total marks for subject across all exams
+}
+
+interface Exam {
+  id: string;
+  collegeId: string;
+  classId: string;
+  subjectId: string;
+  teacherId: string;
+  title: string;
+  description?: string;
+  duration: number; // minutes
+  totalMarks: number;
+  passingMarks: number;
+  scheduledAt: Date;
+  endTime: Date;
+  isActive: boolean;
+  allowLateSubmission: boolean;
+  questionsRandomized: boolean;
+}
+
+interface Question {
+  id: string;
+  examId: string;
+  questionText: string;
+  questionImage?: string;
+  options: string[]; // ["Option A", "Option B", "Option C", "Option D"]
+  correctAnswer: number; // Index of correct option (0-3)
+  marks: number;
+  order: number;
+}
+
+interface ExamAttempt {
+  id: string;
+  studentId: string;
+  examId: string;
+  startedAt: Date;
+  submittedAt?: Date;
+  marksObtained: number;
+  totalMarks: number;
+  percentage: number;
+  grade?: string; // "A+", "A", "B+", etc.
+  timeSpent: number; // minutes
+  isCompleted: boolean;
+  cheatingFlags?: string[]; // ["tab_switch", "copy_paste_attempt"]
+}
+
+interface StudentAnswer {
+  id: string;
+  attemptId: string;
+  questionId: string;
+  selectedOption: number;
+  isCorrect: boolean;
+  marksEarned: number;
+  timeSpent?: number; // seconds on this question
+}
+
+interface AwardList {
+  id: string;
+  collegeId: string;
+  classId: string;
+  subjectId?: string; // null for overall class ranking
+  examId?: string; // null for cumulative ranking
+  type: 'EXAM_SPECIFIC' | 'SUBJECT_CUMULATIVE' | 'CLASS_OVERALL';
+  rankings: StudentRanking[];
+  generatedAt: Date;
+  // Award list generation rules:
+  // EXAM_SPECIFIC: Generated immediately after each exam
+  // SUBJECT_CUMULATIVE: Updated after each exam in that subject
+  // CLASS_OVERALL: Updated after any exam, shows overall class performance
+}
+
+interface StudentRanking {
+  studentId: string;
+  rollNumber: string;
+  studentName: string;
+  totalMarks: number;
+  obtainedMarks: number;
+  percentage: number;
+  grade: string;
+  rank: number;
+  subjectMarks?: { [subjectName: string]: number }; // For overall rankings
+  // Tie-breaking rules: Higher marks in recent exams, then by roll number
+}
+```
+
+## Core Features (MVP)
+
+### 1. College Registration & Setup
+- Super admin can register colleges with unique username
+- Auto-generates initial admin account for college
+- College-specific branding (logo, name)
+
+### 2. Class & Student Management
+- Teachers create classes (Class 1st, 2nd, etc.)
+- Add students with auto-generated Student ID + Password
+- Bulk import students via CSV
+- Student profile management
+
+### 3. Subject & Academic Structure
+- Create subjects per class (Physics, Math, Urdu)
+- Assign teachers to subjects
+- Track student performance per subject
+
+### 4. Exam System
+- Create MCQ exams for specific class + subject
+- Set timing, marks, and scheduling
+- Question bank management
+- Automatic grading for MCQ
+
+### 5. Student Exam Experience
+- Secure exam interface with timer
+- Basic anti-cheat (disable copy/paste, full-screen)
+- Auto-submit on time expiry
+- Immediate results display
+
+### 6. Records & Award Lists
+- Automatic mark recording in student profiles
+- Subject-wise performance tracking
+- Class award lists (rankings)
+- Performance analytics per subject
+
+### 7. Dashboard Features
+**Teacher Dashboard:**
+- Class overview with student counts
+- Recent exam results
+- Upcoming scheduled exams
+- Quick actions (create exam, add student)
+
+**Student Dashboard:**
+- Subject-wise marks overview
+- Upcoming exams
+- Recent test results
+- Class ranking position
+
+## API Structure (Simplified)
+
+### Authentication
+- `POST /api/auth/resolve-college` - Validate college username
+- `POST /api/auth/login/admin` - Teacher/admin login
+- `POST /api/auth/login/student` - Student login
+
+### College Management
+- `GET /api/college/[username]/info` - College information
+- `PUT /api/college/[username]/profile` - Update college profile
+
+### Class Management
+- `GET /api/classes` - List all classes for college
+- `POST /api/classes` - Create new class
+- `PUT /api/classes/[id]` - Update class
+- `DELETE /api/classes/[id]` - Delete class
+
+### Student Management
+- `GET /api/classes/[id]/students` - List students in class
+- `POST /api/students` - Add new student
+- `PUT /api/students/[id]` - Update student
+- `DELETE /api/students/[id]` - Remove student
+- `POST /api/students/bulk-import` - Import students from CSV
+
+### Subject Management
+- `GET /api/classes/[id]/subjects` - List subjects for class
+- `POST /api/subjects` - Create new subject
+- `PUT /api/subjects/[id]` - Update subject
+
+### Exam Management
+- `GET /api/exams` - List exams (filtered by teacher/class)
+- `POST /api/exams` - Create new exam
+- `POST /api/exams/[id]/questions` - Add questions to exam
+- `GET /api/exams/[id]/attempts` - Get exam attempts/results
+
+### Student Exam Taking
+- `GET /api/student/exams/available` - Get available exams for student
+- `POST /api/student/exams/[id]/start` - Start exam attempt
+- `POST /api/student/exams/[id]/submit` - Submit exam answers
+- `GET /api/student/exams/[id]/result` - Get exam result
+
+### Dashboard Data
+- `GET /api/dashboard/teacher` - Teacher dashboard data
+- `GET /api/dashboard/student` - Student dashboard data
+- `GET /api/reports/award-list/[classId]` - Generate class award list
+- `GET /api/reports/student-performance/[studentId]` - Student performance report
+
+## Development Phases
+
+### Phase 1: Foundation (Week 1)
+- Next.js project setup with TypeScript
+- Database schema with Prisma
+- Basic authentication system
+- College resolution system
+- Landing page with college username input
+
+### Phase 2: Admin Panel (Week 2)
+- Teacher/admin dashboard
+- Class management (CRUD)
+- Student management (add/edit/delete)
+- Basic student profile system
+
+### Phase 3: Academic Structure (Week 3)
+- Subject management per class
+- Teacher-subject assignment
+- Student-subject enrollment
+- Basic record keeping structure
+
+### Phase 4: Exam System (Week 4)
+- Exam creation interface
+- Question bank management
+- MCQ question types
+- Exam scheduling
+
+### Phase 5: Exam Taking (Week 5)
+- Student exam interface
+- Timer functionality
+- Basic anti-cheat measures
+- Auto-submission system
+- Immediate result calculation
+
+### Phase 6: Records & Analytics (Week 6)
+- Automatic mark recording
+- Subject-wise performance tracking
+- Award list generation
+- Dashboard analytics
+- Performance reports
+
+### Award List Generation Logic
+- **Real-time Updates**: Rankings auto-update after each exam submission
+- **Calculation Rules**: 
+  - EXAM_SPECIFIC: Rank students by marks in single exam
+  - SUBJECT_CUMULATIVE: Average of all exams in that subject
+  - CLASS_OVERALL: Weighted average across all subjects
+- **Tie-breaking**: Same percentage → higher raw marks → most recent exam performance → roll number (ascending)
+- **Grade Boundaries**: A+ (90-100%), A (80-89%), B+ (70-79%), B (60-69%), C (50-59%), F (<50%)
+- **Display Rules**: Show top 10 students in dashboard, full list available on demand
+- **College Onboarding**: < 5 minutes from registration to first student added
+- **Exam Creation**: < 10 minutes to create and schedule an exam
+- **Student Experience**: < 30 seconds from login to exam start
+- **Result Delivery**: Immediate results after exam submission
+- **Performance**: < 2 seconds page load times
+- **Reliability**: 99%+ exam completion rate without technical issues
+
+## Technical Stack
+- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend**: Next.js API routes
+- **Database**: PostgreSQL + Prisma ORM
+- **Authentication**: NextAuth.js
+- **File Storage**: Cloudinary (for profile images, logos)
+- **Deployment**: Vercel + Supabase
+
+## Anti-Cheat Features (Basic)
+- Full-screen mode enforcement
+- Disable copy/paste during exams
+- Disable right-click context menu
+- Timer with automatic submission
+- Tab switching detection (warning only)
+- Randomize question order per student
+- Session monitoring (basic)

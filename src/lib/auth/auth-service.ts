@@ -86,7 +86,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
       });
 
       if (superAdmin) {
-        role = 'SUPER_ADMIN';
+        role = AppRole.SUPER_ADMIN;
         userId = superAdmin.id;
         userName = superAdmin.name;
         userEmail = superAdmin.email;
@@ -118,7 +118,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
     });
 
     // Store refresh token (only for regular users, not super admins)
-    if (role !== 'SUPER_ADMIN') {
+    if (role !== AppRole.SUPER_ADMIN) {
       await storeRefreshToken(userId!, refreshToken);
     }
 
@@ -153,10 +153,9 @@ export async function registerSuperAdmin(credentials: RegisterCredentials): Prom
     // Hash password
     const hashedPassword = await hashPassword(credentials.password);
 
-    // Create super admin with required username field
+    // Create super admin
     const superAdmin = await db.superAdmin.create({
       data: {
-        username: credentials.email.split('@')[0], // Use email prefix as username
         name: credentials.name,
         email: credentials.email,
         password: hashedPassword,
@@ -166,12 +165,12 @@ export async function registerSuperAdmin(credentials: RegisterCredentials): Prom
     // Generate tokens
     const accessToken = generateAccessToken({
       id: superAdmin.id,
-      role: 'SUPER_ADMIN',
+      role: AppRole.SUPER_ADMIN,
     });
 
     const refreshToken = generateRefreshToken({
       id: superAdmin.id,
-      role: 'SUPER_ADMIN',
+      role: AppRole.SUPER_ADMIN,
     });
 
     // Store refresh token
@@ -182,7 +181,7 @@ export async function registerSuperAdmin(credentials: RegisterCredentials): Prom
         id: superAdmin.id,
         name: superAdmin.name,
         email: superAdmin.email,
-        role: 'SUPER_ADMIN',
+        role: AppRole.SUPER_ADMIN,
       },
       accessToken,
       refreshToken,

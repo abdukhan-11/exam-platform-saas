@@ -39,12 +39,7 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
       }
 
       if (!role) {
-        errorLogger.logWarning('Access denied - No valid token found', {
-          pathname: req.nextUrl.pathname,
-          method: req.method,
-          userAgent: req.headers.get('user-agent'),
-          ip: req.headers.get('x-forwarded-for') || 'unknown'
-        });
+        errorLogger.logWarning('Access denied - No valid token found', req);
         
         return NextResponse.json({ 
           error: 'Unauthorized - No valid token found',
@@ -56,14 +51,7 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
         const permissions = getRolePermissions(role);
         const requiredPermissions = requiredRoles.map(r => getRolePermissions(r));
         
-        errorLogger.logWarning(`Access denied - Insufficient permissions`, {
-          userRole: role,
-          requiredRoles,
-          pathname: req.nextUrl.pathname,
-          method: req.method,
-          userAgent: req.headers.get('user-agent'),
-          ip: req.headers.get('x-forwarded-for') || 'unknown'
-        });
+        errorLogger.logWarning(`Access denied - Insufficient permissions`, req);
         
         return NextResponse.json({ 
           error: 'Forbidden - Insufficient permissions',
@@ -76,19 +64,11 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
       }
 
       // Log successful access
-      errorLogger.logInfo('Access granted', {
-        userRole: role,
-        endpoint: req.nextUrl.pathname,
-        method: req.method,
-        userId: token?.id
-      });
+      errorLogger.logInfo('Access granted', req);
 
       return handler(req, ...args);
     } catch (error) {
-      errorLogger.logError('RBAC middleware error', error, {
-        pathname: req.nextUrl.pathname,
-        method: req.method
-      });
+      errorLogger.logError('RBAC middleware error', error, req);
       
       return NextResponse.json({ 
         error: 'Internal server error in RBAC middleware',
@@ -120,12 +100,7 @@ export async function guardRole(
     }
 
     if (!role) {
-      errorLogger.logWarning('Access denied - No valid authentication found', {
-        endpoint: req.nextUrl.pathname,
-        method: req.method,
-        userAgent: req.headers.get('user-agent'),
-        ip: req.headers.get('x-forwarded-for') || 'unknown'
-      });
+      errorLogger.logWarning('Access denied - No valid authentication found', req);
       
       return NextResponse.json({ 
         error: 'Unauthorized - No valid authentication found',
@@ -137,14 +112,7 @@ export async function guardRole(
       const permissions = getRolePermissions(role);
       const requiredPermissions = allowed.map(r => getRolePermissions(r));
       
-              errorLogger.logWarning(`Access denied - Insufficient permissions`, {
-          userRole: role,
-          requiredRoles: allowed,
-          pathname: req.nextUrl.pathname,
-          method: req.method,
-          userAgent: req.headers.get('user-agent'),
-          ip: req.headers.get('x-forwarded-for') || 'unknown'
-        });
+              errorLogger.logWarning(`Access denied - Insufficient permissions`, req);
       
       return NextResponse.json({ 
         error: 'Forbidden - Insufficient permissions',
@@ -157,19 +125,11 @@ export async function guardRole(
     }
 
     // Log successful access
-    errorLogger.logInfo('Access granted', {
-      userRole: role,
-      endpoint: req.nextUrl.pathname,
-      method: req.method,
-      userId: token?.id
-    });
+    errorLogger.logInfo('Access granted', req);
 
     return null;
   } catch (error) {
-    errorLogger.logError('Role guard error', error, {
-      endpoint: req.nextUrl.pathname,
-      method: req.method
-    });
+    errorLogger.logError('Role guard error', error, req);
     
     return NextResponse.json({ 
       error: 'Internal server error in role guard',
@@ -242,13 +202,7 @@ export function withEndpointPermission(handler: (req: NextRequest, ...args: unkn
       if (!canAccessEndpoint(role, endpoint)) {
         const permissions = getRolePermissions(role);
         
-        errorLogger.logWarning(`Endpoint access denied`, {
-          userRole: role,
-          endpoint,
-          method: req.method,
-          userAgent: req.headers.get('user-agent'),
-          ip: req.headers.get('x-forwarded-for') || 'unknown'
-        });
+        errorLogger.logWarning(`Endpoint access denied`, req);
         
         return NextResponse.json({ 
           error: 'Forbidden - Endpoint access not allowed for this role',
@@ -261,10 +215,7 @@ export function withEndpointPermission(handler: (req: NextRequest, ...args: unkn
 
       return handler(req, ...args);
     } catch (error) {
-      errorLogger.logError('Endpoint permission middleware error', error, {
-        endpoint: req.nextUrl.pathname,
-        method: req.method
-      });
+      errorLogger.logError('Endpoint permission middleware error', error, req);
       
       return NextResponse.json({ 
         error: 'Internal server error in permission middleware',

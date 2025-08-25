@@ -43,11 +43,8 @@ export async function GET(request: NextRequest) {
 
     return apiResponse.success('RBAC test completed', testResults);
   } catch (error) {
-    errorLogger.logError('RBAC test failed', error, {
-      endpoint: '/api/test-rbac',
-      method: 'GET'
-    });
-    return apiResponse.error('RBAC test failed', error);
+    errorLogger.logError('RBAC test failed', error, request);
+    return apiResponse.error('RBAC test failed', 500, error instanceof Error ? error.message : 'Unknown error', request);
   }
 }
 

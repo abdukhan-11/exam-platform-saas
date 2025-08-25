@@ -2,12 +2,17 @@ import { UserRole } from '@prisma/client';
 import { JWT } from 'next-auth/jwt';
 import { Session } from 'next-auth';
 
-// Create a proper enum that includes SUPER_ADMIN
+// Ensure AppRole matches Prisma UserRole enum
 export enum AppRole {
   STUDENT = 'STUDENT',
   TEACHER = 'TEACHER',
   COLLEGE_ADMIN = 'COLLEGE_ADMIN',
   SUPER_ADMIN = 'SUPER_ADMIN'
+}
+
+// Type guard to ensure AppRole matches UserRole
+export function isValidRole(role: string): role is AppRole {
+  return Object.values(AppRole).includes(role as AppRole);
 }
 
 export interface UserSession extends Session {
@@ -50,12 +55,30 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface StudentLoginCredentials {
+  rollNo: string;
+  password: string;
+  collegeUsername: string;
+}
+
 export interface RegisterCredentials {
   name: string;
   email: string;
   password: string;
   role?: AppRole;
   collegeId?: string;
+}
+
+export interface CollegeRegistrationCredentials {
+  name: string;
+  username: string; // college_username
+  email: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
 }
 
 export interface AuthResponse {
@@ -68,4 +91,23 @@ export interface AuthResponse {
   };
   accessToken: string;
   refreshToken: string;
+}
+
+// New interfaces for college selection flow
+export interface CollegeContext {
+  collegeId: string;
+  collegeName: string;
+  collegeUsername: string;
+  userRole: AppRole;
+}
+
+export interface CollegeSelectionResponse {
+  success: boolean;
+  college?: {
+    id: string;
+    name: string;
+    username: string;
+    isActive: boolean;
+  };
+  error?: string;
 }

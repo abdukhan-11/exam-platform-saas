@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MainLayout } from '@/components/layout/main-layout';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -99,17 +99,26 @@ export default function LoginPage() {
                 >
                   Forgot your password?
                 </Link>
-                <p className="text-sm text-muted-foreground">
+                
+                <div className="text-sm text-muted-foreground">
                   Don't have an account?{' '}
                   <Link href="/auth/register" className="text-primary hover:underline">
                     Sign up
                   </Link>
-                </p>
+                </div>
               </div>
             </form>
           </CardContent>
         </Card>
       </div>
     </MainLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

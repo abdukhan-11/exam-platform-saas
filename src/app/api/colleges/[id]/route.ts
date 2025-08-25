@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
 import { hasAnyRole } from '@/lib/auth/utils';
-import { AppRole } from '@/types/auth';
+import { AppRole, UserSession } from '@/types/auth';
 import { db } from '@/lib/db';
 import { apiResponse } from '@/lib/api-response';
 import { validateData, collegeValidationRules } from '@/lib/validation';
@@ -11,20 +11,20 @@ import { errorLogger } from '@/lib/error-logger';
 // GET /api/colleges/[id] - Get a specific college by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    const id = params.id;
+    const { id } = await params;
     
     // Validate ID format
     if (!id || typeof id !== 'string' || id.trim().length === 0) {
@@ -79,20 +79,20 @@ export async function GET(
 // PUT /api/colleges/[id] - Update a college
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    const id = params.id;
+    const { id } = await params;
     
     // Validate ID format
     if (!id || typeof id !== 'string' || id.trim().length === 0) {
@@ -185,11 +185,16 @@ export async function PUT(
     if (body.name.trim().toLowerCase() !== existingCollege.name.toLowerCase()) {
       const duplicateCollege = await db.college.findFirst({
         where: {
-          name: {
-            equals: body.name.trim(),
-            mode: 'insensitive'
-          },
-          id: { not: id }
+          AND: [
+            {
+              OR: [
+                { name: body.name.trim() },
+                { name: body.name.trim().toLowerCase() },
+                { name: body.name.trim().toUpperCase() }
+              ]
+            },
+            { id: { not: id } }
+          ]
         }
       });
 
@@ -251,20 +256,20 @@ export async function PUT(
 // DELETE /api/colleges/[id] - Delete a college
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    const id = params.id;
+    const { id } = await params;
     
     // Validate ID format
     if (!id || typeof id !== 'string' || id.trim().length === 0) {

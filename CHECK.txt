@@ -1,0 +1,239 @@
+## Overview
+
+We are building a **multi-tenant exam SaaS platform** for educational institutions. Each college can register itself, manage its own data, and conduct online exams with complete isolation from other colleges.
+
+The platform will have **three main panels**:
+
+1. **Super Admin (Platform Owner)** – Manages the entire SaaS system.
+2. **Teacher/Admin (College Staff)** – Manages classes, subjects, students, exams, and events for their college.
+3. **Student** – Takes exams, views results, and manages their profile.
+
+---
+
+## Core Features
+
+### 1. Landing Page & College Access
+
+* **Sign-Up Page**: Colleges can register with a unique **college username**.
+* **Get Started Page**: Entry point for all colleges.
+
+  * Field: **College Username**.
+  * If valid → route user to that college’s database.
+  * If invalid → show error with link to Sign-Up page.
+* **Login Choice** (after entering valid college username):
+
+  * **Login as Teacher/Admin**
+  * **Login as Student**
+
+---
+
+### 2. Super Admin Panel (Platform Owner)
+
+* **Responsibilities**:
+
+  * Full control over all colleges.
+  * Manage subscriptions (free/paid/custom).
+  * View analytics across the platform.
+  * Ban/unban colleges.
+* **Data Isolation**: Super Admin only sees **global platform data**.
+* **UI**: Dashboard with colleges list, subscriptions, and analytics.
+
+---
+
+### 3. Teacher/Admin Panel (College Staff)
+
+* **Login**: College Username + Teacher credentials.
+* **Dashboard Modules**:
+
+  * **Classes**: (Class 1st, Class 2nd, etc.)
+
+    * Each class contains its students, subjects, exams, and records.
+  * **Students Management**:
+
+    * Add student (roll no, name, father name, password, profile pic).
+    * Update student records.
+    * Remove student.
+  * **Subjects Management**:
+
+    * Add/update/remove subjects for each class.
+  * **Exams & Tests**:
+
+    * Create/update exams by subject/class.
+    * Set date, duration, marks.
+    * Auto-generate result entry forms.
+  * **Award Lists**:
+
+    * Centralized list of student marks and performance reports.
+  * **Events/Assignments**:
+
+    * Manage upcoming events/exams.
+* **Permissions**: Teacher/Admin has **full control over their college only**.
+
+---
+
+### 4. Student Panel
+
+* **Login**: College Username → Student ID (Roll No) + Password.
+* **Dashboard Modules**:
+
+  * **Profile**: Editable (Name, Father Name, Profile Pic, Change Password).
+  * **Subjects**: Shows enrolled subjects.
+  * **Exams**:
+
+    * List of upcoming exams.
+    * Secure exam-taking interface (with timer).
+    * Marks auto-stored in records.
+  * **Award Lists**: View subject-wise results and overall performance.
+  * **Events**: See upcoming events/exams/assignments.
+
+---
+
+## Database Structure
+
+### `main_system_db`
+
+* **colleges**: `{ id, username, name, created_at, subscription_tier, status }`
+* **super\_admin\_data**: `{ id, setting, value }`
+
+### `college_{username}_db` (per-college isolated database)
+
+* **users**: `{ id, role (teacher/student), name, father_name, email, roll_no, password_hash, class_id, profile_pic }`
+* **classes**: `{ id, name (class1, class2...), description }`
+* **subjects**: `{ id, class_id, name (Physics, Math, Urdu...) }`
+* **exams**: `{ id, subject_id, class_id, title, date, duration, max_marks }`
+* **student\_records**: `{ id, student_id, exam_id, obtained_marks }`
+* **award\_lists**: (generated views or tables for performance reports)
+* **events**: `{ id, class_id, type (exam/assignment/event), title, date }`
+
+---
+
+## User Flows
+
+### College Registration Flow
+
+1. College visits landing page → clicks **Sign-Up**.
+2. Fills form (College Name, College Username, Email, Password).
+3. System creates **new college DB**.
+4. Redirects to **Get Started** page.
+
+### College Login Flow
+
+1. On landing page, enter **College Username**.
+2. If valid → Show **Login as Teacher/Admin** and **Login as Student** buttons.
+3. Teacher logs in → Teacher/Admin Panel.
+4. Student logs in → Student Panel.
+
+### Teacher Exam Creation Flow
+
+1. Login to Teacher/Admin panel.
+2. Select class → subject.
+3. Create exam (title, date, time, duration, questions, marks).
+4. Exam appears in student dashboards.
+
+### Student Exam Taking Flow
+
+1. Student logs in.
+2. Views upcoming exams.
+3. Starts exam (with timer).
+4. Submits → results stored in DB.
+5. Can view results later under **Award List**.
+
+---
+
+## Technical Architecture
+
+* **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui.
+* **Backend**: Next.js API Routes (serverless functions).
+* **Database**: PostgreSQL (separate DB per college).
+* **ORM**: Prisma.
+* **Authentication**: NextAuth.js (role-based).
+* **Real-time**: Socket.io (exam timer & live events).
+* **File Storage**: Cloudinary (for profile pics, documents).
+* **Deployment**: Vercel (frontend), Supabase (DB hosting).
+
+---
+
+## Development Roadmap (Phases)
+
+### Phase 1: Foundation & Authentication
+
+* Landing page with sign-up/get-started.
+* College registration & DB creation.
+* Authentication (Super Admin, Teacher/Admin, Student).
+* Role-based routing.
+
+### Phase 2: Teacher/Admin Panel
+
+* CRUD for Students, Classes, Subjects.
+* Exam/test creation.
+* Award list & events.
+
+### Phase 3: Student Panel
+
+* Exam-taking with timer.
+* Profile management.
+* Award list viewing.
+* Event/exam notifications.
+
+### Phase 4: Super Admin Panel
+
+* Manage colleges (CRUD, ban/unban).
+* Subscription system.
+* Platform-wide analytics.
+
+### Phase 5: Advanced Features
+
+* Anti-cheating (browser lock, tab switch detection).
+* Result analytics (per class, per student).
+* Bulk student import/export.
+* Mobile app support.
+
+---
+
+
+
+from graphviz import Digraph
+
+# Create a directed graph
+dot = Digraph(comment="College Exam SaaS Flow", format="png")
+
+# Landing Page & Registration
+dot.node("Landing", "Landing Page\n(Sign-Up / Get Started)", shape="rectangle", style="rounded,filled", fillcolor="lightblue")
+dot.node("SignUp", "Sign-Up College\n(Create College DB)", shape="rectangle", style="rounded,filled", fillcolor="lightyellow")
+dot.node("GetStarted", "Get Started\n(Enter College Username)", shape="rectangle", style="rounded,filled", fillcolor="lightyellow")
+
+# College validation
+dot.node("CheckCollege", "Check College Username\n(if valid → route DB)", shape="diamond", style="filled", fillcolor="lightgray")
+
+# Login Options
+dot.node("LoginOptions", "Choose Login:\n- Teacher/Admin\n- Student", shape="rectangle", style="rounded,filled", fillcolor="lightgreen")
+
+# Teacher/Admin Flow
+dot.node("TeacherLogin", "Teacher/Admin Login", shape="rectangle", style="rounded,filled", fillcolor="lightpink")
+dot.node("TeacherPanel", "Teacher/Admin Panel\n- Classes\n- Students\n- Subjects\n- Exams\n- Award Lists\n- Events", shape="rectangle", style="rounded,filled", fillcolor="mistyrose")
+
+# Student Flow
+dot.node("StudentLogin", "Student Login", shape="rectangle", style="rounded,filled", fillcolor="lightpink")
+dot.node("StudentPanel", "Student Panel\n- Profile\n- Subjects\n- Exams\n- Award Lists\n- Events", shape="rectangle", style="rounded,filled", fillcolor="mistyrose")
+
+# Super Admin Flow
+dot.node("SuperAdmin", "Super Admin Panel\n- Colleges CRUD\n- Subscriptions\n- Analytics\n- Ban/Unban", shape="rectangle", style="rounded,filled", fillcolor="lightcoral")
+
+# Flow connections
+dot.edge("Landing", "SignUp", label="New College?")
+dot.edge("Landing", "GetStarted", label="Existing College?")
+dot.edge("GetStarted", "CheckCollege")
+dot.edge("CheckCollege", "LoginOptions", label="Valid")
+dot.edge("CheckCollege", "SignUp", label="Invalid → Register")
+dot.edge("LoginOptions", "TeacherLogin")
+dot.edge("LoginOptions", "StudentLogin")
+dot.edge("TeacherLogin", "TeacherPanel")
+dot.edge("StudentLogin", "StudentPanel")
+
+
+# Render graph to file
+file_path = "/mnt/data/college_exam_saas_flow"
+dot.render(file_path, format="png", cleanup=False)
+
+file_path + ".png"
+

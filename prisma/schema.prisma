@@ -25,6 +25,7 @@ model SuperAdmin {
 model College {
   id          String   @id @default(cuid())
   name        String
+  username    String   @unique // This will be the college_username from PRD
   address     String?
   phone       String?
   email       String?
@@ -37,6 +38,9 @@ model College {
   users       User[]
   subjects    Subject[]
   exams       Exam[]
+  classes     Class[]
+  events      Event[]
+  studentProfiles StudentProfile[]
 
   @@map("college")
 }
@@ -56,6 +60,9 @@ model User {
   college      College?     @relation(fields: [collegeId], references: [id])
   examResults  ExamResult[]
   refreshTokens RefreshToken[]
+  enrollments  Enrollment[]
+  studentProfile StudentProfile?
+  attempts     StudentExamAttempt[]
 
   @@map("user")
 }
@@ -68,12 +75,15 @@ model Subject {
   credits   Int      @default(3)
   isActive  Boolean  @default(true)
   collegeId String
+  classId   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
   college College @relation(fields: [collegeId], references: [id])
+  class   Class?  @relation(fields: [classId], references: [id])
   exams   Exam[]
+  events  Event[]
 
   @@map("subject")
 }
@@ -90,6 +100,7 @@ model Exam {
   isActive    Boolean  @default(true)
   subjectId   String
   collegeId   String
+  classId     String?
   createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -97,8 +108,10 @@ model Exam {
   // Relations
   subject     Subject      @relation(fields: [subjectId], references: [id])
   college     College      @relation(fields: [collegeId], references: [id])
+  class       Class?       @relation(fields: [classId], references: [id])
   questions   Question[]
   examResults ExamResult[]
+  attempts    StudentExamAttempt[]
 
   @@map("exam")
 }
@@ -116,6 +129,8 @@ model Question {
 
   // Relations
   exam Exam @relation(fields: [examId], references: [id])
+  questionOptions QuestionOption[]
+  answers         StudentAnswer[]
 
   @@map("question")
 }
@@ -141,6 +156,127 @@ model ExamResult {
   @@map("exam_result")
 }
 
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+
+  // Relations
+  question Question @relation(fields: [questionId], references: [id])
+  answers  StudentAnswer[]
+
+  @@map("question_option")
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  description String?
+  collegeId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  college     College  @relation(fields: [collegeId], references: [id])
+  enrollments Enrollment[]
+  subjects    Subject[]
+  exams       Exam[]
+  events      Event[]
+
+  @@unique([collegeId, name])
+  @@map("class")
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  classId   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  class Class @relation(fields: [classId], references: [id])
+
+  @@unique([userId, classId])
+  @@map("enrollment")
+}
+
+model StudentProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  collegeId       String
+  rollNo          String
+  fatherName      String?
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  college College @relation(fields: [collegeId], references: [id])
+
+  @@unique([collegeId, rollNo])
+  @@map("student_profile")
+}
+
+model StudentExamAttempt {
+  id         String   @id @default(cuid())
+  userId     String
+  examId     String
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  score      Int      @default(0)
+  totalMarks Int      @default(0)
+  isCompleted Boolean @default(false)
+
+  // Relations
+  user    User @relation(fields: [userId], references: [id])
+  exam    Exam @relation(fields: [examId], references: [id])
+  answers StudentAnswer[]
+
+  @@unique([userId, examId])
+  @@map("student_exam_attempt")
+}
+
+model StudentAnswer {
+  id              String   @id @default(cuid())
+  attemptId       String
+  questionId      String
+  selectedOptionId String?
+  answerText      String?
+  isCorrect       Boolean  @default(false)
+  marksAwarded    Int      @default(0)
+
+  // Relations
+  attempt StudentExamAttempt @relation(fields: [attemptId], references: [id])
+  question Question           @relation(fields: [questionId], references: [id])
+  selectedOption QuestionOption? @relation(fields: [selectedOptionId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@map("student_answer")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        EventType
+  scheduledAt DateTime
+  collegeId   String
+  classId     String?
+  subjectId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  college College @relation(fields: [collegeId], references: [id])
+  class   Class?  @relation(fields: [classId], references: [id])
+  subject Subject? @relation(fields: [subjectId], references: [id])
+
+  @@map("event")
+}
+
 model RefreshToken {
   id        String   @id @default(cuid())
   token     String   @unique
@@ -160,6 +296,7 @@ enum UserRole {
   STUDENT
   TEACHER
   COLLEGE_ADMIN
+  SUPER_ADMIN
 }
 
 enum QuestionType {
@@ -167,4 +304,10 @@ enum QuestionType {
   TRUE_FALSE
   SHORT_ANSWER
   ESSAY
+}
+
+enum EventType {
+  EXAM
+  ASSIGNMENT
+  OTHER
 }

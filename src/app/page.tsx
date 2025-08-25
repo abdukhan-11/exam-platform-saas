@@ -1,182 +1,152 @@
 import Link from 'next/link';
-
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { MainLayout } from '@/components/layout/main-layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <MainLayout>
-      <div className="space-y-12">
-        {/* Hero Section */}
-        <section className="space-y-6 py-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            Welcome to <span className="text-primary">Exam SaaS</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="container mx-auto px-4 py-6">
+        <nav className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">E</span>
+            </div>
+            <span className="text-xl font-bold text-gray-900">ExamPlatform</span>
+          </div>
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/auth/login" className="text-gray-600 hover:text-gray-900">
+              Sign In
+            </Link>
+            <Link href="/auth/register" className="text-gray-600 hover:text-gray-900">
+              Sign Up
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      <main className="container mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Secure Online Exams
+            <span className="block text-blue-600">Made Simple</span>
           </h1>
-          <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
-            A comprehensive platform for creating, managing, and taking online
-            examinations. Built with modern technologies and beautiful UI
-            components.
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Conduct fair, secure, and instantly graded online examinations with complete administrative control. 
+            Perfect for colleges, schools, and educational institutions.
           </p>
-          <div className="flex justify-center gap-4 sm:flex-row">
-            <Button size="lg" asChild>
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/marketing">Learn More</Link>
-            </Button>
+          
+          {/* College Selection CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/college/register">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg">
+                Sign Up New College
+              </Button>
+            </Link>
+            <Link href="/college/select">
+              <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg">
+                Get Started
+              </Button>
+            </Link>
           </div>
-        </section>
+        </div>
 
-        {/* Features Section */}
-        <section className="space-y-8">
-          <h2 className="center text-3xl font-bold">Platform Features</h2>
-          <div className="gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Modern UI Components</CardTitle>
-                <CardDescription>
-                  Built with shadcn/ui and Tailwind CSS for a beautiful,
-                  responsive design
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Explore our component library with demo pages showcasing
-                  Button, Input, Card, Alert, and Dialog components.
-                </p>
-              </CardContent>
-            </Card>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <Card className="text-center">
+            <CardHeader>
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <CardTitle>Anti-Cheating Technology</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Advanced monitoring with browser lock, tab switching prevention, and real-time behavior analysis
+              </CardDescription>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>TypeScript Support</CardTitle>
-                <CardDescription>
-                  Full TypeScript integration for better development experience
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Type-safe development with proper type definitions and
-                  IntelliSense support.
-                </p>
-              </CardContent>
-            </Card>
+          <Card className="text-center">
+            <CardHeader>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <CardTitle>Instant Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Get immediate grading and detailed analytics with comprehensive performance insights
+              </CardDescription>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Responsive Design</CardTitle>
-                <CardDescription>
-                  Mobile-first approach with Tailwind CSS utilities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Optimized for all devices with responsive breakpoints and
-                  mobile-friendly navigation.
-                </p>
-              </CardContent>
-            </Card>
+          <Card className="text-center">
+            <CardHeader>
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <CardTitle>Multi-Tenant Platform</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Each college gets isolated data with secure row-level access control
+              </CardDescription>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* How It Works */}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">How It Works</h2>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold">1</span>
+              </div>
+              <h3 className="font-semibold mb-2">Select Your College</h3>
+              <p className="text-gray-600 text-sm">Enter your college username or register a new one</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold">2</span>
+              </div>
+              <h3 className="font-semibold mb-2">Login & Access</h3>
+              <p className="text-gray-600 text-sm">Sign in as admin, teacher, or student</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold">3</span>
+              </div>
+              <h3 className="font-semibold mb-2">Create & Take Exams</h3>
+              <p className="text-gray-600 text-sm">Teachers create exams, students take them securely</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold">4</span>
+              </div>
+              <h3 className="font-semibold mb-2">Get Results Instantly</h3>
+              <p className="text-gray-600 text-sm">Immediate grading and detailed analytics</p>
+            </div>
           </div>
-        </section>
+        </div>
+      </main>
 
-        {/* Component Showcase */}
-        <section className="space-y-8">
-          <h2 className="center text-3xl font-bold">Component Showcase</h2>
-          <div className="gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Interactive Components</CardTitle>
-                <CardDescription>Test our UI components</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Button>Primary Button</Button>
-                  <Button variant="outline">Outline Button</Button>
-                </div>
-                <Input placeholder="Enter your email" />
-                <Alert>
-                  <AlertDescription>
-                    This is an example alert component with custom styling.
-                  </AlertDescription>
-                </Alert>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="secondary">Open Dialog</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Example Dialog</DialogTitle>
-                      <DialogDescription>
-                        This is an example dialog component. You can customize
-                        it with any content.
-                      </DialogDescription>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Demo Pages</CardTitle>
-                <CardDescription>Explore our component demos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/button-demo">Button Demo</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/input-demo">Input Demo</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/card-demo">Card Demo</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/alert-demo">Alert Demo</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/dialog-demo">Dialog Demo</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/theme-test">Theme Test</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Theme Information */}
-        <section className="space-y-4 text-center">
-          <h2 className="text-2xl font-bold">Custom Theme</h2>
-          <p className="text-muted-foreground">
-            This project uses a custom Tailwind CSS theme with primary and
-            secondary colors. Visit the{' '}
-            <Link href="/theme-test" className="text-primary hover:underline">
-              Theme Test
-            </Link>{' '}
-            page to see all theme customizations.
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-400">
+            © 2025 ExamPlatform. Secure, fair, and efficient online examination management.
           </p>
-        </section>
-      </div>
-    </MainLayout>
+        </div>
+      </footer>
+    </div>
   );
 }

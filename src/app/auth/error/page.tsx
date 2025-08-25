@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MainLayout } from '@/components/layout/main-layout';
 
 interface ErrorPageProps {
-  searchParams: {
+  searchParams: Promise<{
     error?: string;
-  };
+  }>;
 }
 
-export default function ErrorPage({ searchParams }: ErrorPageProps) {
-  const error = searchParams.error || 'unknown_error';
+export default async function ErrorPage({ searchParams }: ErrorPageProps) {
+  const { error } = await searchParams;
+  const errorCode = error || 'unknown_error';
   
   const getErrorMessage = (errorCode: string) => {
     switch (errorCode) {
@@ -36,7 +37,7 @@ export default function ErrorPage({ searchParams }: ErrorPageProps) {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-destructive">Authentication Error</CardTitle>
             <CardDescription>
-              {getErrorMessage(error)}
+              {getErrorMessage(errorCode)}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

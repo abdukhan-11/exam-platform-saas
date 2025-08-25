@@ -163,7 +163,10 @@ export function ErrorMonitor() {
                   {level.charAt(0).toUpperCase() + level.slice(1)}
                   {filter === level && (
                     <Badge variant="secondary" className="ml-2">
-                      {filter === 'all' ? stats.total : stats[level]}
+                      {filter === 'all' ? stats.total : 
+                       level === 'error' ? stats.errors :
+                       level === 'warn' ? stats.warnings :
+                       level === 'info' ? stats.info : 0}
                     </Badge>
                   )}
                 </Button>

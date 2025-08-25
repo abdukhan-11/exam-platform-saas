@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { verifyAccessToken } from '@/lib/auth/token-service';
-import type { AppRole } from '@/types/auth';
+import { AppRole } from '@/types/auth';
 
 export default async function middleware(req: NextRequest) {
   try {
@@ -19,10 +19,10 @@ export default async function middleware(req: NextRequest) {
 
     // Define role-based access for dashboard paths
     const roleAccess: Record<string, AppRole[]> = {
-      '/dashboard/superadmin': ['SUPER_ADMIN'],
-      '/dashboard/college-admin': ['SUPER_ADMIN', 'COLLEGE_ADMIN'],
-      '/dashboard/teacher': ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER'],
-      '/dashboard/student': ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT'],
+      '/dashboard/superadmin': [AppRole.SUPER_ADMIN],
+      '/dashboard/college-admin': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN],
+      '/dashboard/teacher': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER],
+      '/dashboard/student': [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER, AppRole.STUDENT],
     };
 
     // Check if the current path requires role-based access

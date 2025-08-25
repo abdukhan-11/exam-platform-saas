@@ -6,9 +6,9 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
 interface EditCollegePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getCollege(id: string) {
@@ -24,7 +24,8 @@ async function getCollege(id: string) {
 }
 
 export default async function EditCollegePage({ params }: EditCollegePageProps) {
-  const college = await getCollege(params.id);
+  const { id } = await params;
+  const college = await getCollege(id);
   
   return (
     <div className="container mx-auto p-6">

@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       const testCollege = await prisma.college.create({
         data: {
           name: `Test College ${Date.now()}`,
+          username: `test_college_${Date.now()}`,
           address: '123 Test Street, Test City',
           phone: '123-456-7890',
           email: `test${Date.now()}@example.com`,

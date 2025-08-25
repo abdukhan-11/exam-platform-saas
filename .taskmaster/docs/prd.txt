@@ -5,6 +5,26 @@ Our target users include colleges, schools, and educational institutions that ne
 
 # Core Features  
 
+## Landing, Sign-up, and College Username Flow
+What it does: Streamlined onboarding and tenant routing using a unique college username
+Why it's important: Ensures clean isolation per institution and a simple entry point for users
+How it works:
+- Landing page shows two primary CTAs: Sign up (for new colleges) and Get Started (for existing colleges)
+- College Sign-up collects college details and a unique `college_username` (e.g., "greenfield_college"), then provisions tenant defaults in a single shared database
+- Get Started prompts for `college_username`
+  - If invalid, show helpful error and a link back to Sign up
+  - If valid, resolve `collegeId` and store it in session for row-level scoping
+- After selecting a valid `college_username`, show two options:
+  - Login as Admin/Teacher
+  - Login as Student
+
+Authentication modes:
+- Admin/Teacher: Email/password (or invited account) within the selected college context
+- Student: Roll No (student_id) + password issued by teacher/admin, scoped to the selected college
+
+Session isolation:
+- All subsequent operations are performed within the selected college context (row-level scoping by `collegeId`) for the remainder of the session
+
 ## Super Admin Panel (Platform Owner)
 **What it does:** Complete control over all colleges, subscriptions, and platform-wide analytics
 **Why it's important:** Enables monetization, quality control, and centralized management of the entire SaaS platform
@@ -13,17 +33,47 @@ Our target users include colleges, schools, and educational institutions that ne
 ## College Admin/Teacher Panel  
 **What it does:** Institution-level management of students, exams, subjects, and results within their college boundary
 **Why it's important:** Provides educational institutions with complete autonomy over their examination processes while maintaining data isolation
-**How it works:** Role-based access control allowing teachers to create/edit exams, manage student enrollments, update marks, add/remove subjects, and view detailed analytics for their institution only
+**How it works:** Role-based access control allowing teachers to:
+- Create/edit exams (per class and subject), set timers/schedules
+- Manage classes (e.g., Class 1, Class 2, ...)
+- Add/remove students, assign them to classes (enrollments)
+- Create student accounts with Roll No and temporary password
+- Manage subjects per class (e.g., Physics, Math, Urdu)
+- Update results/marks and view award lists per class and subject
+- Maintain upcoming events/exams per class and subject
+- View institution-only analytics and activity logs
+ 
+### Teacher Class Management Workflow
+- Teachers are assigned to one or more classes
+- Teachers can create subjects scoped to specific classes
+- Teachers can view all students enrolled in their assigned classes
+- Teachers can generate award lists per exam, per subject (overall), and per class (overall)
 
 ## Student Panel with Anti-Cheating
 **What it does:** Secure exam-taking interface with real-time monitoring and instant result delivery
 **Why it's important:** Ensures exam integrity while providing immediate feedback to students
-**How it works:** Login via roll number/password, locked browser environment during exams (keyboard blocking, tab switching prevention), randomized question order per student, timer-based auto-submission, and immediate result display post-submission
+**How it works:**
+- College selection via `college_username` precedes login
+- Student login with Roll No + password issued by teacher/admin
+- Student dashboard includes:
+  - Subject-wise marks (e.g., Physics 85%, Math 92%, Urdu 78%)
+  - Class award list/ranking (e.g., Position 5th out of 30)
+  - Upcoming exams (e.g., Math Test – Tomorrow 2PM)
+  - Recent exam results
+  - Profile management (Edit name, father name, photo, password)
+- Exam flow: locked browser, tab-switch prevention, randomized questions, timer, auto-submit
+- Post-exam: immediate result display and per-subject history of marks
+- Profile management: student can edit name, father-name, profile picture, and change password
 
-## Multi-Tenant Data Architecture
-**What it does:** Complete data isolation between different educational institutions
-**Why it's important:** Ensures privacy, security, and scalability while maintaining a single platform
-**How it works:** Database-level tenant isolation using college_id foreign keys, role-based access control, and institution-specific user management
+## Multi-Tenant Data Architecture (Single Database with Row-Level Isolation)
+**What it does:** Strong data isolation using a single shared database with `collegeId` foreign keys and strict row-level scoping
+**Why it's important:** Simpler operations and lower complexity while maintaining privacy, security, and scalability
+**How it works:**
+- Single PostgreSQL database contains all tenant data
+- `College` registry stores `college_username`, subscription tier, and status
+- Every tenant-scoped table includes a `collegeId` foreign key
+- Middleware and queries always scope by `collegeId` from the active session (set after College Username validation)
+- Role-based access is enforced within the selected college context only
 
 ## Real-time Exam Monitoring
 **What it does:** Live tracking of student behavior during examinations with cheating detection
@@ -54,6 +104,13 @@ Our target users include colleges, schools, and educational institutions that ne
 
 ## Key User Flows
 
+### College Selection and Tenant Routing Flow
+1. Landing → click Get Started
+2. Enter `college_username`
+3. If valid, store tenant context in session; otherwise show helpful prompt with Sign up link
+4. Present two options: Login as Admin/Teacher or Login as Student
+5. Continue auth within the selected college context
+
 ### Student Exam Taking Flow
 1. Login with roll number and password
 2. View available exams dashboard
@@ -69,6 +126,7 @@ Our target users include colleges, schools, and educational institutions that ne
 4. For MCQs: Add options and mark correct answers
 5. Set exam schedule and student access
 6. Publish exam → Students can see in their dashboard
+7. Monitor live exams → View who started, time remaining, completion status
 
 ### Super Admin College Management Flow
 1. Login to super admin panel
@@ -97,24 +155,74 @@ Our target users include colleges, schools, and educational institutions that ne
 
 ## Data Models
 ```
+Single DB (row-level isolation via collegeId)
 SuperAdmin → manages → College (1:many)
-College → contains → User (1:many) 
-User → creates → Subject (teacher:many)
-Subject → contains → Exam (1:many)
-Exam → contains → Question (1:many)
-Question → has → QuestionOption (1:many) for MCQs
-Student → attempts → Exam → StudentExamAttempt (many:many:1)
-StudentExamAttempt → contains → StudentAnswer (1:many)
-Student → has → StudentFee (1:many)
+College → has → college_username (unique), subscription/configs
+
+CollegeContext (scoped by collegeId on each entity)
+  ├── User (roles: COLLEGE_ADMIN, TEACHER, STUDENT)
+  │    └── StudentProfile (userId 1:1; rollNo unique per college; fatherName; profileImageUrl)
+  ├── Class (e.g., Class 1, Class 2)
+  │    ├── Enrollment (many:many between Student(User) and Class)
+  │    └── TeacherClassAssignment (teacherId ↔ classId linkage)
+  ├── Subject (scoped to Class and College)
+  │    └── Exam (per Subject and optionally per Class; timer, schedule)
+  │         ├── Question (1:many) → QuestionOption (1:many for MCQs)
+  │         └── StudentExamAttempt (Student attempts Exam) → StudentAnswer
+  ├── Award Lists (computed views or snapshot tables for rankings per exam/subject/class)
+  └── Event (upcoming exams/assignments per class/subject)
 ```
+
+Additional Entity Attributes (implementation-oriented)
+- User/Student:
+  - Roll number generation: YYYY-XXX per college (e.g., 2025-001)
+  - Default password policy: teacher-specified or name+"123" (overrideable at first login)
+- Class:
+  - classTeacherId (primary teacher), academicYear (e.g., "2024-2025")
+- Subject:
+  - teacherId (assigned teacher), optional code (e.g., PHY101), optional totalMarks
+- Exam:
+  - allowLateSubmission (boolean), questionsRandomized (boolean)
+- Question:
+  - order (int), optional questionImage
+- StudentExamAttempt:
+  - timeSpent (minutes), grade (e.g., "A+", "A"), cheatingFlags[]
+- StudentAnswer:
+  - timeSpent (seconds per question)
+
+Award List Generation Logic
+- Types and scopes:
+  - EXAM_SPECIFIC: rank students by obtained marks for a single exam
+  - SUBJECT_CUMULATIVE: aggregate/average across all exams in a subject (term/range)
+  - CLASS_OVERALL: weighted/average across all subjects (term/range)
+- Tie-breakers:
+  - Higher total marks → most recent exam performance → earliest completion time → roll number (ascending)
+- Grade boundaries (defaults, configurable):
+  - A+ (90–100%), A (80–89%), B+ (70–79%), B (60–69%), C (50–59%), F (<50%)
+- Display rules:
+  - Show top 10 on dashboards; full lists available on demand
+- Update triggers:
+  - On submission/result change (event-driven), plus nightly recompute for aggregates
 
 ## APIs and Integrations
 - **Authentication API:** JWT-based with refresh tokens
-- **Exam Management API:** CRUD operations for exams, questions, results
-- **User Management API:** Student/teacher registration, role assignment
+- **College Selection API:** Resolve `college_username` → `collegeId`, establish tenant context for row-scoped queries
+- **Admin/Teacher Auth:** Email/password within college context
+- **Student Auth:** Roll No + password within college context
+- **Exam Management API:** CRUD operations for exams, questions, results per class/subject
+- **User Management API:** Student/teacher registration, role assignment, enrollments
 - **Analytics API:** Real-time dashboards and reporting
 - **Payment Integration:** Stripe for subscription billing (future)
 - **Email Service:** SendGrid for notifications and results
+
+Initial API Endpoints (non-exhaustive, for planning)
+- Auth: `/api/auth/resolve-college`, `/api/auth/login/admin`, `/api/auth/login/student`
+- Classes: `GET/POST/PUT/DELETE /api/classes`
+- Students: `GET /api/classes/[id]/students`, `POST /api/students`, `PUT/DELETE /api/students/[id]`, `POST /api/students/bulk-import`
+- Subjects: `GET /api/classes/[id]/subjects`, `POST /api/subjects`, `PUT /api/subjects/[id]`
+- Exams: `GET/POST /api/exams`, `POST /api/exams/[id]/questions`, `GET /api/exams/[id]/attempts`
+- Student Exam: `GET /api/student/exams/available`, `POST /api/student/exams/[id]/start`, `POST /api/student/exams/[id]/submit`, `GET /api/student/exams/[id]/result`
+- Dashboards/Reports: `GET /api/dashboard/teacher`, `GET /api/dashboard/student`, `GET /api/reports/award-list/[classId]`, `GET /api/reports/student-performance/[studentId]`
 
 ## Infrastructure Requirements
 - **Database:** PostgreSQL with connection pooling
@@ -138,7 +246,7 @@ Student → has → StudentFee (1:many)
 - Student registration and management
 - Subject creation and management  
 - Basic user profile management
-- College-specific data isolation implementation
+- College-specific data isolation via `collegeId` scoping
 - Email invitation system for new users
 
 ## Phase 3: Basic Exam System
@@ -246,6 +354,12 @@ Student → has → StudentFee (1:many)
 - **Scalability:** Support for 10,000+ concurrent exam takers
 - **Uptime:** 99.9% availability SLA target
 - **Security:** SOC 2 Type II compliance preparation
+
+### Operational SLOs (experience targets)
+- College onboarding: < 5 minutes from registration to first student added
+- Exam creation: < 10 minutes to create and schedule a standard MCQ exam
+- Student time-to-start: < 30 seconds from login to exam start
+- Result delivery: immediate after exam submission
 
 ## Competitive Analysis
 - **Google Forms:** Lacks advanced anti-cheating, limited to basic quizzes

@@ -1,4 +1,4 @@
-import type { AppRole } from '@/types/auth';
+import { AppRole } from '@/types/auth';
 
 /**
  * Check if a user has a specific role
@@ -8,10 +8,10 @@ import type { AppRole } from '@/types/auth';
  */
 export function hasRole(userRole: AppRole, requiredRole: AppRole): boolean {
   const roleHierarchy: Record<AppRole, number> = {
-    'STUDENT': 1,
-    'TEACHER': 2,
-    'COLLEGE_ADMIN': 3,
-    'SUPER_ADMIN': 4,
+    [AppRole.STUDENT]: 1,
+    [AppRole.TEACHER]: 2,
+    [AppRole.COLLEGE_ADMIN]: 3,
+    [AppRole.SUPER_ADMIN]: 4,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
@@ -44,10 +44,10 @@ export function hasAllRoles(userRole: AppRole, requiredRoles: AppRole[]): boolea
  */
 export function getHighestRole(roles: AppRole[]): AppRole {
   const roleHierarchy: Record<AppRole, number> = {
-    'STUDENT': 1,
-    'TEACHER': 2,
-    'COLLEGE_ADMIN': 3,
-    'SUPER_ADMIN': 4,
+    [AppRole.STUDENT]: 1,
+    [AppRole.TEACHER]: 2,
+    [AppRole.COLLEGE_ADMIN]: 3,
+    [AppRole.SUPER_ADMIN]: 4,
   };
 
   return roles.reduce((highest, current) => 
@@ -61,7 +61,7 @@ export function getHighestRole(roles: AppRole[]): AppRole {
  * @returns True if the role is a super admin
  */
 export function isSuperAdmin(role: AppRole): boolean {
-  return role === 'SUPER_ADMIN';
+  return role === AppRole.SUPER_ADMIN;
 }
 
 /**
@@ -70,7 +70,7 @@ export function isSuperAdmin(role: AppRole): boolean {
  * @returns True if the role is a college admin or higher
  */
 export function isCollegeAdmin(role: AppRole): boolean {
-  return hasRole(role, 'COLLEGE_ADMIN');
+  return hasRole(role, AppRole.COLLEGE_ADMIN);
 }
 
 /**
@@ -79,7 +79,7 @@ export function isCollegeAdmin(role: AppRole): boolean {
  * @returns True if the role is a teacher or higher
  */
 export function isTeacher(role: AppRole): boolean {
-  return hasRole(role, 'TEACHER');
+  return hasRole(role, AppRole.TEACHER);
 }
 
 /**
@@ -88,5 +88,5 @@ export function isTeacher(role: AppRole): boolean {
  * @returns True if the role is a student or higher
  */
 export function isStudent(role: AppRole): boolean {
-  return hasRole(role, 'STUDENT');
+  return hasRole(role, AppRole.STUDENT);
 }

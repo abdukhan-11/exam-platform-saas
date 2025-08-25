@@ -2,17 +2,17 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
 import { hasAnyRole } from '@/lib/auth/utils';
-import { AppRole } from '@/types/auth';
+import { AppRole, UserSession } from '@/types/auth';
 import { apiResponse } from '@/lib/api-response';
 import { errorLogger } from '@/lib/error-logger';
 
 // GET /api/admin/error-logs - Get error logs and statistics
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return apiResponse.unauthorized('Access denied. Super admin privileges required.', request);
     }
 
@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
 // DELETE /api/admin/error-logs - Clear all error logs
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return apiResponse.unauthorized('Access denied. Super admin privileges required.', request);
     }
 

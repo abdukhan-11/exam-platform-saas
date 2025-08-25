@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
 import { hasAnyRole } from '@/lib/auth/utils';
-import { AppRole } from '@/types/auth';
+import { AppRole, UserSession } from '@/types/auth';
 import { db } from '@/lib/db';
 import { apiResponse } from '@/lib/api-response';
 import { validateData, collegeValidationRules } from '@/lib/validation';
@@ -11,10 +11,10 @@ import { errorLogger } from '@/lib/error-logger';
 // GET /api/colleges - Get all colleges with pagination, search, and sorting
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
@@ -132,10 +132,10 @@ export async function GET(request: NextRequest) {
 // POST /api/colleges - Create a new college
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as UserSession | null;
     
     // Check if user is authenticated and has super admin role
-    if (!session || !hasAnyRole(session, [AppRole.SUPER_ADMIN])) {
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
@@ -154,9 +154,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for duplicate college name
+    // Check for duplicate college name (case-insensitive for SQLite)
     const existingCollege = await db.college.findFirst({
-      where: { name: { equals: body.name.trim(), mode: 'insensitive' } },
+      where: {
+        OR: [
+          { name: body.name.trim() },
+          { name: body.name.trim().toLowerCase() },
+          { name: body.name.trim().toUpperCase() }
+        ]
+      },
     });
 
     if (existingCollege) {
@@ -171,6 +177,7 @@ export async function POST(request: NextRequest) {
     const college = await db.college.create({
       data: {
         name: body.name.trim(),
+        username: body.name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, ''), // Generate username from name
         address: body.address?.trim() || null,
         phone: body.phone?.trim() || null,
         email: body.email?.trim() || null,
