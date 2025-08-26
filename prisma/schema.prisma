@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model SuperAdmin {
@@ -473,7 +473,7 @@ model EventSubscription {
   notificationChannel NotificationChannel
   isActive        Boolean  @default(true)
   preferences     Json? // User preferences for notifications
-  optOutTypes     EventType[] // Event types user doesn't want notifications for
+  optOutTypes     String? // JSON string of EventType[] - event types user doesn't want notifications for
   collegeId       String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

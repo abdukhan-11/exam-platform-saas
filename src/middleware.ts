@@ -1,6 +1,7 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequestWithAuth } from 'next-auth/middleware';
+import { AppRole, isValidRole } from '@/types/auth';
 
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
@@ -16,18 +17,21 @@ export default withAuth(
     const collegeId = token?.collegeId;
 
     // Ensure we have the required token properties
-    if (!userRole) {
-      console.error('Missing user role in token');
+    if (!userRole || !isValidRole(userRole)) {
+      console.error('Missing or invalid user role in token');
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
+    // Use string comparisons to avoid TypeScript issues
+    const role = userRole as string;
+
     // Super Admin can access everything
-    if (userRole === 'SUPER_ADMIN') {
+    if (role === 'SUPER_ADMIN') {
       return NextResponse.next();
     }
 
     // Check if user has a college assigned (except for super admin)
-    if (!collegeId && userRole !== 'SUPER_ADMIN') {
+    if (!collegeId && role !== 'SUPER_ADMIN') {
       // Redirect to college selection if no college is assigned
       if (pathname !== '/college/select' && !pathname.startsWith('/auth/')) {
         return NextResponse.redirect(new URL('/college/select', req.url));
@@ -36,7 +40,7 @@ export default withAuth(
 
     // College Admin routes
     if (pathname.startsWith('/dashboard/college-admin')) {
-      if (userRole !== 'COLLEGE_ADMIN') {
+      if (role !== 'COLLEGE_ADMIN') {
         return NextResponse.redirect(new URL('/forbidden', req.url));
       }
       // Ensure college admin can only access their own college
@@ -51,7 +55,7 @@ export default withAuth(
 
     // Teacher routes
     if (pathname.startsWith('/dashboard/teacher')) {
-      if (userRole !== 'TEACHER') {
+      if (role !== 'TEACHER') {
         return NextResponse.redirect(new URL('/forbidden', req.url));
       }
       // Ensure teacher can only access their own college
@@ -66,7 +70,7 @@ export default withAuth(
 
     // Student routes
     if (pathname.startsWith('/dashboard/student')) {
-      if (userRole !== 'STUDENT') {
+      if (role !== 'STUDENT') {
         return NextResponse.redirect(new URL('/forbidden', req.url));
       }
       // Ensure student can only access their own college
@@ -81,7 +85,7 @@ export default withAuth(
 
     // Super Admin specific routes
     if (pathname.startsWith('/dashboard/superadmin')) {
-      if (userRole !== 'SUPER_ADMIN') {
+      if (role !== 'SUPER_ADMIN') {
         return NextResponse.redirect(new URL('/forbidden', req.url));
       }
       return NextResponse.next();
@@ -109,7 +113,7 @@ export const config = {
     '/dashboard/:path*',
     '/api/protected/:path*',
     '/admin/:path*',
-    '/college/:path*',
+    '/college/select/:path*',
   ],
 };
 

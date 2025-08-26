@@ -15,6 +15,10 @@ export function Navigation() {
     router.push('/auth/login');
   };
 
+  const handleSignUp = () => {
+    router.push('/college/register');
+  };
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -83,6 +87,13 @@ export function Navigation() {
               onClick={handleSignIn}
             >
               Sign In
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleSignUp}
+            >
+              Sign Up
             </Button>
             <Button 
               size="sm"

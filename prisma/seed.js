@@ -23,6 +23,7 @@ async function main() {
     create: {
       code: 'COLL-001',
       name: 'Demo College',
+      username: 'demo-college',
       email: 'info@demo-college.edu',
       city: 'Karachi',
       state: 'Sindh',

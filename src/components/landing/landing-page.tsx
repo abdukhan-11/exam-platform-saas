@@ -114,9 +114,9 @@ export function LandingPage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => router.push('/auth/login')}
+                onClick={handleCollegeRegistration}
               >
-                Sign In
+                Sign Up
               </Button>
               <Button 
                 size="sm"
@@ -178,12 +178,12 @@ export function LandingPage() {
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      router.push('/auth/login');
+                      handleCollegeRegistration();
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full"
                   >
-                    Sign In
+                    Sign Up
                   </Button>
                   <Button 
                     size="sm"
@@ -458,6 +458,253 @@ export function LandingPage() {
                     Register New Institution
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="bg-white py-12 sm:py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 px-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Choose the plan that fits your institution's needs. No hidden fees, no surprises.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+            {/* Trial Plan */}
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">Trial</CardTitle>
+                <div className="text-3xl font-bold text-gray-900 mb-2">Free</div>
+                <CardDescription>Perfect for getting started</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Up to 100 students
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    5 exams per month
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Basic security features
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Email support
+                  </li>
+                </ul>
+                <Button className="w-full mt-6" variant="outline">
+                  Start Free Trial
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Professional Plan */}
+            <Card className="border-2 border-blue-600 shadow-lg hover:shadow-xl transition-shadow duration-300 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                  Most Popular
+                </span>
+              </div>
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">Professional</CardTitle>
+                <div className="text-3xl font-bold text-gray-900 mb-2">$29<span className="text-lg text-gray-600">/month</span></div>
+                <CardDescription>For growing institutions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Up to 1,000 students
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Unlimited exams
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Advanced security features
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Priority support
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Analytics dashboard
+                  </li>
+                </ul>
+                <Button className="w-full mt-6 bg-blue-600 hover:bg-blue-700">
+                  Get Started
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Enterprise Plan */}
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">Enterprise</CardTitle>
+                <div className="text-3xl font-bold text-gray-900 mb-2">Custom</div>
+                <CardDescription>For large institutions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Unlimited students
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Unlimited exams
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Enterprise security
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    24/7 dedicated support
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Custom integrations
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    On-premise deployment
+                  </li>
+                </ul>
+                <Button className="w-full mt-6" variant="outline">
+                  Contact Sales
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="bg-gray-50 py-12 sm:py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 px-4">
+              Get in Touch
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Have questions? We're here to help you get started with your exam management platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 max-w-6xl mx-auto">
+            {/* Contact Information */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-sm">📧</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Email</p>
+                      <p className="text-gray-600">support@examsaas.com</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-sm">📞</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Phone</p>
+                      <p className="text-gray-600">+1 (555) 123-4567</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-sm">🕒</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Support Hours</p>
+                      <p className="text-gray-600">Monday - Friday, 9 AM - 6 PM EST</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Links</h3>
+                <div className="space-y-2">
+                  <a href="#" className="block text-blue-600 hover:text-blue-800 transition-colors">
+                    Documentation
+                  </a>
+                  <a href="#" className="block text-blue-600 hover:text-blue-800 transition-colors">
+                    Help Center
+                  </a>
+                  <a href="#" className="block text-blue-600 hover:text-blue-800 transition-colors">
+                    API Reference
+                  </a>
+                  <a href="#" className="block text-blue-600 hover:text-blue-800 transition-colors">
+                    Status Page
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Send us a Message</CardTitle>
+                <CardDescription>
+                  Fill out the form below and we'll get back to you within 24 hours.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input id="firstName" placeholder="Enter your first name" />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input id="lastName" placeholder="Enter your last name" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" placeholder="Enter your email" />
+                  </div>
+                  <div>
+                    <Label htmlFor="institution">Institution Name</Label>
+                    <Input id="institution" placeholder="Enter your institution name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input id="subject" placeholder="What can we help you with?" />
+                  </div>
+                  <div>
+                    <Label htmlFor="message">Message</Label>
+                    <textarea
+                      id="message"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Tell us more about your needs..."
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Send Message
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </div>
