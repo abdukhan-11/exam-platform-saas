@@ -7,7 +7,7 @@ declare global {
 
 // Create Prisma client with connection pooling and optimization
 const prisma = globalThis.__prisma || new PrismaClient({
-  log: [
+  log: process.env.NODE_ENV === 'development' ? [
     {
       emit: 'event',
       level: 'query',
@@ -24,7 +24,7 @@ const prisma = globalThis.__prisma || new PrismaClient({
       emit: 'stdout',
       level: 'warn',
     },
-  ],
+  ] : ['error'],
   // Connection pooling configuration
   datasources: {
     db: {
@@ -33,12 +33,6 @@ const prisma = globalThis.__prisma || new PrismaClient({
   },
   // Query optimization
   errorFormat: 'pretty',
-  // Enable query performance insights
-  __internal: {
-    engine: {
-      enableEngineDebugMode: process.env.NODE_ENV === 'development',
-    },
-  },
 })
 
 // Connection pooling and health check
@@ -46,31 +40,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma
 }
 
-// Middleware for automatic collegeId filtering (multi-tenant isolation)
-prisma.$use(async (params, next) => {
-  // Add collegeId to queries for multi-tenant isolation
-  if (params.action === 'findMany' || params.action === 'findFirst') {
-    // Only apply to tenant-scoped models
-    const tenantScopedModels = [
-      'user', 'subject', 'class', 'exam', 'question', 
-      'studentProfile', 'enrollment', 'teacherClassAssignment',
-      'studentExamAttempt', 'studentAnswer', 'event'
-    ]
-    
-    if (tenantScopedModels.includes(params.model || '')) {
-      // If collegeId is provided in the query, ensure it's used
-      if (params.args?.where?.collegeId) {
-        // College ID is already specified, proceed normally
-      } else {
-        // For now, we'll let the application layer handle collegeId filtering
-        // This ensures proper tenant isolation at the application level
-        console.log(`⚠️  Multi-tenant query detected for ${params.model} without collegeId filter`)
-      }
-    }
-  }
-  
-  return next(params)
-})
+// Note: Multi-tenant isolation is handled at the application layer
+// through proper collegeId filtering in service methods
 
 // Health check function
 export async function checkDatabaseHealth() {

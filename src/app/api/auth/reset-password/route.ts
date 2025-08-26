@@ -1,59 +1,111 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resetPassword, verifyPasswordResetToken } from '@/lib/auth/password-reset';
+import { RecoveryService } from '@/lib/user-management/recovery-service';
+import { db } from '@/lib/db';
+import { z } from 'zod';
 
-export async function POST(req: NextRequest) {
+const resetPasswordSchema = z.object({
+  token: z.string(),
+  password: z.string().min(8).max(100),
+});
+
+export async function POST(request: NextRequest) {
   try {
-    const { token, newPassword } = await req.json();
+    const body = await request.json();
+    const { token, password } = resetPasswordSchema.parse(body);
 
-    if (!token || !newPassword) {
+    const recoveryService = new RecoveryService(db);
+
+    // Reset password using recovery token
+    const user = await recoveryService.resetPasswordWithToken(token, password, {
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+    });
+
+    return NextResponse.json({
+      message: 'Password reset successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Token and new password are required' },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }
 
-    // Validate password strength
-    if (newPassword.length < 6) {
+    if (error instanceof Error) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: error.message },
         { status: 400 }
       );
     }
 
-    // Simple password validation - just length requirement
-    if (newPassword.length < 6) {
+    return NextResponse.json(
+      { error: 'Failed to reset password' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+
+    if (!token) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: 'Reset token is required' },
         { status: 400 }
       );
     }
 
-    // Verify the token first
-    const tokenVerification = await verifyPasswordResetToken(token);
-    if (!tokenVerification.valid) {
+    const recoveryService = new RecoveryService(db);
+    const recoveryRequest = await recoveryService.getRecoveryRequest(token);
+
+    if (!recoveryRequest) {
       return NextResponse.json(
-        { error: 'Invalid or expired password reset token' },
+        { error: 'Invalid or expired reset token' },
+        { status: 404 }
+      );
+    }
+
+    if (recoveryRequest.used) {
+      return NextResponse.json(
+        { error: 'Reset token has already been used' },
         { status: 400 }
       );
     }
 
-    // Reset the password
-    const success = await resetPassword(token, newPassword);
-    if (!success) {
+    if (recoveryRequest.expiresAt < new Date()) {
       return NextResponse.json(
-        { error: 'Failed to reset password' },
-        { status: 500 }
+        { error: 'Reset token has expired' },
+        { status: 400 }
+      );
+    }
+
+    if (recoveryRequest.type !== 'PASSWORD_RESET') {
+      return NextResponse.json(
+        { error: 'Invalid reset token type' },
+        { status: 400 }
       );
     }
 
     return NextResponse.json({
-      message: 'Password has been reset successfully',
+      valid: true,
+      email: recoveryRequest.user.email,
+      expiresAt: recoveryRequest.expiresAt,
     });
-
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Error validating reset token:', error);
+    
     return NextResponse.json(
-      { error: 'Failed to reset password' },
+      { error: 'Failed to validate reset token' },
       { status: 500 }
     );
   }

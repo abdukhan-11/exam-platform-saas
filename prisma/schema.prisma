@@ -25,6 +25,7 @@ model SuperAdmin {
 model College {
   id          String   @id @default(cuid())
   name        String
+  username    String   @unique // College username for authentication
   code        String   @unique // College code for identification
   address     String?
   city        String?
@@ -49,27 +50,40 @@ model College {
   notifications Notification[]
   eventSubscriptions EventSubscription[]
   eventReminders EventReminder[]
+  userInvitations UserInvitation[]
+  emailLogs   EmailLog[]
 
   @@map("college")
   @@index([isActive])
   @@index([subscriptionStatus])
+  @@index([username])
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole @default(STUDENT)
-  isActive  Boolean  @default(true)
-  collegeId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  firstName  String?
+  lastName   String?
+  email      String   @unique
+  rollNo     String?  // Student roll number (unique per college)
+  password   String
+  role       UserRole @default(STUDENT)
+  isActive   Boolean  @default(true)
+  collegeId  String?
+  department String?  // Department or major
+  position   String?  // Job position or title
+  phone      String?  // Phone number
+  bio        String?  // User bio/description
+  avatar     String?  // Profile image URL
+  preferences Json?   // User preferences as JSON
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
   college      College?     @relation(fields: [collegeId], references: [id])
   examResults  ExamResult[]
   refreshTokens RefreshToken[]
+  recoveryRequests RecoveryRequest[]
   enrollments  Enrollment[]
   studentProfile StudentProfile?
   attempts     StudentExamAttempt[]
@@ -77,12 +91,18 @@ model User {
   notifications Notification[]
   eventSubscriptions EventSubscription[]
   eventReminders EventReminder[]
+  activityLogs ActivityLog[]
+  emailLogs    EmailLog[]
+  sentInvitations UserInvitation[] @relation("Inviter")
+  acceptedInvitations UserInvitation[] @relation("Accepter")
 
   @@map("user")
   @@index([collegeId])
   @@index([role])
   @@index([isActive])
   @@index([email])
+  @@index([rollNo])
+  @@unique([collegeId, rollNo]) // Roll number unique per college
 }
 
 model Subject {
@@ -518,6 +538,135 @@ model RefreshToken {
   @@index([revoked])
 }
 
+model RecoveryRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // PASSWORD_RESET, ACCOUNT_RECOVERY, EMAIL_VERIFICATION
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("recovery_request")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([used])
+  @@index([type])
+}
+
+model UserInvitation {
+  id              String   @id @default(cuid())
+  email           String
+  role            UserRole
+  collegeId       String
+  invitedBy       String
+  invitationToken String   @unique
+  expiresAt       DateTime
+  status          InvitationStatus @default(PENDING)
+  acceptedAt      DateTime?
+  acceptedBy      String?
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  resendCount     Int      @default(0)
+  lastResentAt    DateTime?
+  customMessage   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  college College @relation(fields: [collegeId], references: [id])
+  inviter User @relation("Inviter", fields: [invitedBy], references: [id])
+  accepter User? @relation("Accepter", fields: [acceptedBy], references: [id])
+
+  @@map("user_invitation")
+  @@index([email])
+  @@index([collegeId])
+  @@index([invitationToken])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([invitedBy])
+}
+
+model EmailLog {
+  id              String   @id @default(cuid())
+  to              String
+  from            String
+  subject         String
+  template        String?  // Template used (e.g., "invitation", "password-reset")
+  status          EmailStatus @default(PENDING)
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+  retryCount      Int      @default(0)
+  maxRetries      Int      @default(3)
+  messageId       String?  // Provider message ID
+  provider        String   @default("smtp") // smtp, sendgrid, etc.
+  metadata        Json?    // Additional provider-specific data
+  collegeId       String?
+  userId          String?  // User who triggered the email
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+  college College? @relation(fields: [collegeId], references: [id])
+
+  @@map("email_log")
+  @@index([to])
+  @@index([status])
+  @@index([template])
+  @@index([sentAt])
+  @@index([collegeId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  sessionId   String?
+  action      String   // e.g., "LOGIN", "LOGOUT", "CREATE_USER", "UPDATE_PROFILE"
+  resource    String?  // e.g., "USER", "EXAM", "CLASS"
+  resourceId  String?  // ID of the affected resource
+  details     Json?    // Additional details about the action
+  ipAddress   String?
+  userAgent   String?
+  location    String?  // Geolocation data
+  riskScore   Float?   // Security risk assessment score
+  metadata    Json?    // Additional metadata
+  collegeId   String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("activity_log")
+  @@index([userId])
+  @@index([sessionId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([ipAddress])
+  @@index([collegeId])
+  @@index([createdAt])
+  @@index([riskScore])
+}
+
 // Enums
 enum UserRole {
   SUPER_ADMIN
@@ -597,4 +746,23 @@ enum Gender {
   FEMALE
   OTHER
   PREFER_NOT_TO_SAY
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+  FAILED
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+  CANCELLED
 }

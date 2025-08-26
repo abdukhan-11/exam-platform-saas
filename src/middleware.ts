@@ -12,12 +12,26 @@ export default withAuth(
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
-    const userRole = token.role;
-    const collegeId = token.collegeId;
+    const userRole = token?.role;
+    const collegeId = token?.collegeId;
+
+    // Ensure we have the required token properties
+    if (!userRole) {
+      console.error('Missing user role in token');
+      return NextResponse.redirect(new URL('/auth/login', req.url));
+    }
 
     // Super Admin can access everything
     if (userRole === 'SUPER_ADMIN') {
       return NextResponse.next();
+    }
+
+    // Check if user has a college assigned (except for super admin)
+    if (!collegeId && userRole !== 'SUPER_ADMIN') {
+      // Redirect to college selection if no college is assigned
+      if (pathname !== '/college/select' && !pathname.startsWith('/auth/')) {
+        return NextResponse.redirect(new URL('/college/select', req.url));
+      }
     }
 
     // College Admin routes
@@ -95,6 +109,7 @@ export const config = {
     '/dashboard/:path*',
     '/api/protected/:path*',
     '/admin/:path*',
+    '/college/:path*',
   ],
 };
 

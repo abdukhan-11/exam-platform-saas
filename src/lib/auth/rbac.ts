@@ -33,7 +33,7 @@ export function withRole(handler: (req: NextRequest, ...args: unknown[]) => Prom
               id: decoded.id,
               role: decoded.role,
               collegeId: decoded.collegeId,
-                         } as { id: string; role: AppRole; collegeId?: string };
+            } as { id: string; role: AppRole; collegeId?: string };
           }
         }
       }

@@ -112,17 +112,17 @@ function LoginForm() {
   if (!college) {
     return (
       <MainLayout>
-        <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="container mx-auto flex items-center justify-center min-h-[60vh] px-4">
           <Card className="w-full max-w-md">
-            <CardContent className="pt-6 text-center">
+            <CardContent className="pt-6 text-center px-4 sm:px-6">
               <Alert>
-                <AlertDescription>
+                <AlertDescription className="text-sm sm:text-base">
                   No college selected. Please go back to select your institution.
                 </AlertDescription>
               </Alert>
               <Button 
                 onClick={handleBackToCollegeSelection} 
-                className="mt-4 w-full"
+                className="mt-4 w-full h-11 sm:h-12 text-sm sm:text-base"
                 variant="outline"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -137,34 +137,34 @@ function LoginForm() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
+      <div className="container mx-auto flex items-center justify-center min-h-[60vh] px-4 py-6">
         <Card className="w-full max-w-md">
-          <CardHeader>
+          <CardHeader className="px-4 sm:px-6">
             <div className="flex items-center space-x-2 mb-2">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-600 font-medium">{college.username}</span>
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+              <span className="text-xs sm:text-sm text-blue-600 font-medium">{college.username}</span>
             </div>
-            <CardTitle>Sign In to {college.name}</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Sign In to {college.name}</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             {/* College Info Display */}
             <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-900">{college.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-900 truncate">{college.name}</p>
                   <p className="text-xs text-blue-700">@{college.username}</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBackToCollegeSelection}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 flex-shrink-0 ml-2"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Change
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  <span className="hidden sm:inline">Change</span>
                 </Button>
               </div>
             </div>
@@ -180,12 +180,12 @@ function LoginForm() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {error && (
                     <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription className="text-sm">{error}</AlertDescription>
                     </Alert>
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -194,11 +194,12 @@ function LoginForm() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={isLoading}
+                      className="h-11 sm:h-12 text-sm sm:text-base"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
                     <Input
                       id="password"
                       type="password"
@@ -207,10 +208,11 @@ function LoginForm() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       disabled={isLoading}
+                      className="h-11 sm:h-12 text-sm sm:text-base"
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 sm:h-12 text-sm sm:text-base" disabled={isLoading}>
                     {isLoading ? 'Signing In...' : 'Sign In'}
                   </Button>
                 </form>
@@ -220,12 +222,12 @@ function LoginForm() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {error && (
                     <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription className="text-sm">{error}</AlertDescription>
                     </Alert>
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="rollNo">Roll Number</Label>
+                    <Label htmlFor="rollNo" className="text-sm sm:text-base">Roll Number</Label>
                     <Input
                       id="rollNo"
                       type="text"
@@ -234,11 +236,12 @@ function LoginForm() {
                       onChange={(e) => setRollNo(e.target.value)}
                       required
                       disabled={isLoading}
+                      className="h-11 sm:h-12 text-sm sm:text-base"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="studentPassword">Password</Label>
+                    <Label htmlFor="studentPassword" className="text-sm sm:text-base">Password</Label>
                     <Input
                       id="studentPassword"
                       type="password"
@@ -247,10 +250,11 @@ function LoginForm() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       disabled={isLoading}
+                      className="h-11 sm:h-12 text-sm sm:text-base"
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 sm:h-12 text-sm sm:text-base" disabled={isLoading}>
                     {isLoading ? 'Signing In...' : 'Sign In'}
                   </Button>
                 </form>
@@ -260,12 +264,12 @@ function LoginForm() {
             <div className="text-center space-y-2 mt-6">
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-primary hover:underline"
+                className="text-xs sm:text-sm text-primary hover:underline"
               >
                 Forgot your password?
               </Link>
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link href="/auth/register" className="text-primary hover:underline">
                   Sign up
