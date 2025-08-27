@@ -21,7 +21,17 @@ interface CreateUserDialogProps {
 export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: CreateUserDialogProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    email: string;
+    rollNo: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    phone: string;
+    dateOfBirth: string;
+    address: string;
+  }>({
     email: '',
     rollNo: '',
     password: '',
@@ -39,15 +49,20 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
   const availableRoles = [
     { value: UserRole.STUDENT, label: 'Student' },
     { value: UserRole.TEACHER, label: 'Teacher' },
+    { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
+    { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
   ];
 
-  if (canCreateCollegeAdmin) {
-    availableRoles.push({ value: UserRole.COLLEGE_ADMIN, label: 'College Admin' });
-  }
-
-  if (canCreateSuperAdmin && session?.user.role === UserRole.SUPER_ADMIN) {
-    availableRoles.push({ value: UserRole.SUPER_ADMIN, label: 'Super Admin' });
-  }
+  // Filter roles based on user permissions
+  const filteredRoles = availableRoles.filter(role => {
+    if (session?.user.role === UserRole.SUPER_ADMIN) {
+      return true; // Super admin can assign any role
+    }
+    if (session?.user.role === UserRole.COLLEGE_ADMIN) {
+      return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
+    }
+    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,12 +106,12 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | UserRole) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const isStudentRole = formData.role === UserRole.STUDENT;
-  const isTeacherOrAdminRole = [UserRole.TEACHER, UserRole.COLLEGE_ADMIN, UserRole.SUPER_ADMIN].includes(formData.role);
+  const isTeacherOrAdminRole = ([UserRole.TEACHER, UserRole.COLLEGE_ADMIN, UserRole.SUPER_ADMIN] as UserRole[]).includes(formData.role);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,12 +144,12 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
 
           <div>
             <Label htmlFor="role">Role *</Label>
-            <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+            <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value as UserRole)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {availableRoles.map((role) => (
+                {filteredRoles.map((role) => (
                   <SelectItem key={role.value} value={role.value}>
                     {role.label}
                   </SelectItem>

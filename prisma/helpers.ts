@@ -296,5 +296,4 @@ export class DatabasePerformanceMonitor {
   }
 }
 
-// Export the helper classes
-export { MultiTenantQueryHelper, DatabasePerformanceMonitor }
+// Helper classes are already exported above

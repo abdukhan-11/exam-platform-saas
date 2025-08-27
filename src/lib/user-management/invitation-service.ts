@@ -30,8 +30,12 @@ export interface InvitationWithDetails {
   customMessage: string | null;
   createdAt: Date;
   updatedAt: Date;
-  college: College;
-  inviter: User;
+  college: College | null;
+  inviter: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
 }
 
 export class InvitationService {
@@ -107,7 +111,7 @@ export class InvitationService {
         to: email,
         inviterName: invitation.inviter.name || invitation.inviter.email,
         inviterEmail: invitation.inviter.email,
-        collegeName: invitation.college.name,
+        collegeName: invitation.college?.name || 'Unknown College',
         role,
         invitationToken,
         expiresAt,
@@ -204,13 +208,12 @@ export class InvitationService {
     // Create user account
     const user = await this.prisma.user.create({
       data: {
+        name: invitation.email, // UserInvitation doesn't have a name field, use email
         email: invitation.email,
-        name: userData.name,
         password: userData.password, // Should be hashed by the calling function
         role: invitation.role,
         collegeId: invitation.collegeId,
         isActive: true,
-        emailVerified: new Date(),
       },
     });
 
@@ -229,7 +232,7 @@ export class InvitationService {
       await this.emailService.sendWelcomeEmail({
         to: user.email,
         userName: user.name || user.email,
-        collegeName: invitation.college.name,
+        collegeName: invitation.college?.name || 'Unknown College',
         role: user.role,
         loginUrl: `${process.env.NEXTAUTH_URL}/auth/signin`,
       });
@@ -291,7 +294,7 @@ export class InvitationService {
         to: invitation.email,
         inviterName: invitation.inviter.name || invitation.inviter.email,
         inviterEmail: invitation.inviter.email,
-        collegeName: invitation.college.name,
+        collegeName: invitation.college?.name || 'Unknown College',
         role: invitation.role,
         invitationToken: invitation.invitationToken,
         expiresAt: invitation.expiresAt,

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ErrorDisplay, SuccessDisplay } from '@/components/shared/error-display';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CollegeFormProps {
   initialData?: {
@@ -17,6 +18,7 @@ interface CollegeFormProps {
     phone?: string;
     email?: string;
     website?: string;
+    subscriptionTier?: 'free' | 'basic' | 'premium' | 'enterprise';
   };
   isEditing?: boolean;
 }
@@ -27,6 +29,9 @@ interface ValidationErrors {
   phone?: string;
   email?: string;
   website?: string;
+  subscriptionTier?: string;
+  adminEmail?: string;
+  adminName?: string;
 }
 
 export default function CollegeForm({ initialData, isEditing = false }: CollegeFormProps) {
@@ -42,6 +47,10 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
     phone: initialData?.phone || '',
     email: initialData?.email || '',
     website: initialData?.website || '',
+    subscriptionTier: initialData?.subscriptionTier || 'free' as const,
+    adminEmail: '',
+    adminName: '',
+    createAdmin: true,
   });
 
   // Reset form when initialData changes
@@ -53,6 +62,10 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
         phone: initialData.phone || '',
         email: initialData.email || '',
         website: initialData.website || '',
+        subscriptionTier: initialData.subscriptionTier || 'free',
+        adminEmail: '',
+        adminName: '',
+        createAdmin: false, // Don't create admin when editing
       });
     }
   }, [initialData]);
@@ -106,6 +119,21 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
       }
     }
 
+    // Admin validation (only for new colleges)
+    if (!isEditing && formData.createAdmin) {
+      if (!formData.adminName.trim()) {
+        errors.adminName = 'Admin name is required when creating admin user';
+      }
+      if (!formData.adminEmail.trim()) {
+        errors.adminEmail = 'Admin email is required when creating admin user';
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.adminEmail)) {
+          errors.adminEmail = 'Please enter a valid admin email address';
+        }
+      }
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -128,12 +156,23 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
       
       const method = isEditing ? 'PUT' : 'POST';
 
+      const payload = {
+        ...formData,
+        // Only include admin data for new colleges
+        ...(isEditing ? {} : {
+          adminUser: formData.createAdmin ? {
+            name: formData.adminName,
+            email: formData.adminEmail,
+          } : undefined
+        })
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -163,15 +202,15 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
     }
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const getFieldError = (field: keyof typeof formData) => {
+  const getFieldError = (field: keyof ValidationErrors) => {
     return validationErrors[field];
   };
 
-  const isFieldInvalid = (field: keyof typeof formData) => {
+  const isFieldInvalid = (field: keyof ValidationErrors) => {
     return !!getFieldError(field);
   };
 
@@ -215,6 +254,31 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
             />
             {getFieldError('name') && (
               <p className="text-sm text-red-500">{getFieldError('name')}</p>
+            )}
+          </div>
+
+          {/* Subscription Tier */}
+          <div className="space-y-2">
+            <Label htmlFor="subscriptionTier" className="text-sm font-medium">
+              Subscription Tier <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.subscriptionTier}
+              onValueChange={(value) => handleInputChange('subscriptionTier', value)}
+              disabled={isLoading}
+            >
+              <SelectTrigger className={isFieldInvalid('subscriptionTier') ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select subscription tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="basic">Basic</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+            {getFieldError('subscriptionTier') && (
+              <p className="text-sm text-red-500">{getFieldError('subscriptionTier')}</p>
             )}
           </div>
 
@@ -293,6 +357,73 @@ export default function CollegeForm({ initialData, isEditing = false }: CollegeF
               <p className="text-sm text-red-500">{getFieldError('website')}</p>
             )}
           </div>
+
+          {/* Admin User Creation (only for new colleges) */}
+          {!isEditing && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="createAdmin"
+                    checked={formData.createAdmin}
+                    onChange={(e) => handleInputChange('createAdmin', e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="createAdmin" className="text-sm font-medium">
+                    Create Admin User
+                  </Label>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Create an admin user for this college with full access to manage the institution.
+                </p>
+              </div>
+
+              {formData.createAdmin && (
+                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                  <h3 className="font-medium text-gray-900">Admin User Details</h3>
+                  
+                  {/* Admin Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="adminName" className="text-sm font-medium">
+                      Admin Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="adminName"
+                      type="text"
+                      value={formData.adminName}
+                      onChange={(e) => handleInputChange('adminName', e.target.value)}
+                      className={isFieldInvalid('adminName') ? 'border-red-500' : ''}
+                      placeholder="Enter admin full name"
+                      disabled={isLoading}
+                    />
+                    {getFieldError('adminName') && (
+                      <p className="text-sm text-red-500">{getFieldError('adminName')}</p>
+                    )}
+                  </div>
+
+                  {/* Admin Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="adminEmail" className="text-sm font-medium">
+                      Admin Email <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="adminEmail"
+                      type="email"
+                      value={formData.adminEmail}
+                      onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                      className={isFieldInvalid('adminEmail') ? 'border-red-500' : ''}
+                      placeholder="Enter admin email address"
+                      disabled={isLoading}
+                    />
+                    {getFieldError('adminEmail') && (
+                      <p className="text-sm text-red-500">{getFieldError('adminEmail')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">

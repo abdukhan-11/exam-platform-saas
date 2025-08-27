@@ -32,15 +32,21 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
 
   const availableRoles = [
     { value: UserRole.TEACHER, label: 'Teacher' },
+    { value: UserRole.STUDENT, label: 'Student' },
+    { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
+    { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
   ];
 
-  if (canInviteCollegeAdmin) {
-    availableRoles.push({ value: UserRole.COLLEGE_ADMIN, label: 'College Admin' });
-  }
-
-  if (canInviteSuperAdmin && session?.user.role === UserRole.SUPER_ADMIN) {
-    availableRoles.push({ value: UserRole.SUPER_ADMIN, label: 'Super Admin' });
-  }
+  // Filter roles based on user permissions
+  const filteredRoles = availableRoles.filter(role => {
+    if (session?.user.role === UserRole.SUPER_ADMIN) {
+      return true; // Super admin can assign any role
+    }
+    if (session?.user.role === UserRole.COLLEGE_ADMIN) {
+      return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
+    }
+    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +84,7 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | UserRole) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -109,7 +115,7 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {availableRoles.map((role) => (
+                {filteredRoles.map((role) => (
                   <SelectItem key={role.value} value={role.value}>
                     {role.label}
                   </SelectItem>

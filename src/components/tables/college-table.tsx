@@ -9,6 +9,27 @@ import { ErrorDisplay, SuccessDisplay } from '@/components/shared/error-display'
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  MoreHorizontal, 
+  Ban, 
+  CheckCircle,
+  Building2,
+  Users,
+  CreditCard
+} from 'lucide-react';
 import Link from 'next/link';
 
 interface College {
@@ -19,6 +40,8 @@ interface College {
   email: string | null;
   website: string | null;
   isActive: boolean;
+  subscriptionTier: 'free' | 'basic' | 'premium' | 'enterprise';
+  userCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +58,20 @@ interface CollegeTableProps {
   showPagination?: boolean;
   itemsPerPage?: number;
 }
+
+const subscriptionTierColors = {
+  free: 'bg-gray-100 text-gray-800',
+  basic: 'bg-blue-100 text-blue-800',
+  premium: 'bg-purple-100 text-purple-800',
+  enterprise: 'bg-green-100 text-green-800'
+};
+
+const subscriptionTierLabels = {
+  free: 'Free',
+  basic: 'Basic',
+  premium: 'Premium',
+  enterprise: 'Enterprise'
+};
 
 export default function CollegeTable({ 
   showSearch = true, 
@@ -54,6 +91,9 @@ export default function CollegeTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof College>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedColleges, setSelectedColleges] = useState<Set<string>>(new Set());
+  const [filterTier, setFilterTier] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     college: { id: string; name: string } | null;
@@ -63,10 +103,19 @@ export default function CollegeTable({
     college: null,
     isLoading: false,
   });
+  const [bulkActionDialog, setBulkActionDialog] = useState<{
+    open: boolean;
+    action: string;
+    isLoading: boolean;
+  }>({
+    open: false,
+    action: '',
+    isLoading: false,
+  });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch colleges with pagination and search
-  const fetchColleges = async (page: number = 1, search: string = '') => {
+  // Fetch colleges with pagination, search, and filters
+  const fetchColleges = async (page: number = 1, search: string = '', filters: any = {}) => {
     setIsLoading(true);
     setError(null);
 
@@ -76,7 +125,8 @@ export default function CollegeTable({
         limit: pagination.limit.toString(),
         search: search,
         sortBy: sortField,
-        sortOrder: sortDirection
+        sortOrder: sortDirection,
+        ...filters
       });
 
       const response = await fetch(`/api/colleges?${params}`);
@@ -97,17 +147,21 @@ export default function CollegeTable({
 
   // Initial fetch
   useEffect(() => {
-    fetchColleges(1, searchTerm);
-  }, [sortField, sortDirection]);
+    const filters: any = {};
+    if (filterTier !== 'all') filters.tier = filterTier;
+    if (filterStatus !== 'all') filters.status = filterStatus;
+    
+    fetchColleges(1, searchTerm, filters);
+  }, [sortField, sortDirection, filterTier, filterStatus]);
 
   // Handle search with debouncing
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchTerm !== '') {
-        fetchColleges(1, searchTerm);
-      } else {
-        fetchColleges(1, '');
-      }
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      fetchColleges(1, searchTerm, filters);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -117,7 +171,11 @@ export default function CollegeTable({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.pages) {
       setPagination(prev => ({ ...prev, page: newPage }));
-      fetchColleges(newPage, searchTerm);
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      fetchColleges(newPage, searchTerm, filters);
     }
   };
 
@@ -128,6 +186,100 @@ export default function CollegeTable({
     } else {
       setSortField(field);
       setSortDirection('asc');
+    }
+  };
+
+  // Handle bulk selection
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedColleges(new Set(colleges.map(c => c.id)));
+    } else {
+      setSelectedColleges(new Set());
+    }
+  };
+
+  const handleSelectCollege = (collegeId: string, checked: boolean) => {
+    const newSelected = new Set(selectedColleges);
+    if (checked) {
+      newSelected.add(collegeId);
+    } else {
+      newSelected.delete(collegeId);
+    }
+    setSelectedColleges(newSelected);
+  };
+
+  // Handle bulk actions
+  const handleBulkAction = async (action: string) => {
+    if (selectedColleges.size === 0) return;
+
+    setBulkActionDialog({ open: true, action, isLoading: true });
+    setError(null);
+
+    try {
+      const response = await fetch('/api/colleges/bulk-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          collegeIds: Array.from(selectedColleges)
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to perform bulk ${action}`);
+      }
+
+      setSuccessMessage(`Bulk ${action} completed successfully for ${selectedColleges.size} colleges.`);
+      setSelectedColleges(new Set());
+      
+      // Refresh the current page
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      fetchColleges(pagination.page, searchTerm, filters);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to perform bulk ${action}`);
+    } finally {
+      setBulkActionDialog({ open: false, action: '', isLoading: false });
+    }
+  };
+
+  // Handle export
+  const handleExport = async (format: 'csv' | 'excel') => {
+    try {
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      const params = new URLSearchParams({
+        format,
+        search: searchTerm,
+        ...filters
+      });
+
+      const response = await fetch(`/api/colleges/export?${params}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to export colleges');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `colleges-export.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setSuccessMessage(`Colleges exported successfully in ${format.toUpperCase()} format.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export colleges');
     }
   };
 
@@ -161,7 +313,11 @@ export default function CollegeTable({
       setSuccessMessage(`College "${deleteDialog.college.name}" was successfully deleted.`);
       
       // Refresh the current page
-      fetchColleges(pagination.page, searchTerm);
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      fetchColleges(pagination.page, searchTerm, filters);
     } catch (err) {
       setDeleteDialog(prev => ({ ...prev, isLoading: false }));
       setError(err instanceof Error ? err.message : 'Failed to delete college');
@@ -170,6 +326,34 @@ export default function CollegeTable({
 
   const handleDeleteCancel = () => {
     setDeleteDialog({ open: false, college: null, isLoading: false });
+  };
+
+  // Handle status toggle
+  const handleStatusToggle = async (collegeId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/colleges/${collegeId}/toggle-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update college status');
+      }
+
+      setSuccessMessage(`College status updated successfully.`);
+      
+      // Refresh the current page
+      const filters: any = {};
+      if (filterTier !== 'all') filters.tier = filterTier;
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      
+      fetchColleges(pagination.page, searchTerm, filters);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update college status');
+    }
   };
 
   // Format date
@@ -208,9 +392,27 @@ export default function CollegeTable({
               Manage college records ({pagination.total} total)
             </CardDescription>
           </div>
-          <Link href="/dashboard/superadmin/colleges/new">
-            <Button>Add New College</Button>
-          </Link>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                  Export as Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link href="/dashboard/superadmin/colleges/new">
+              <Button>Add New College</Button>
+            </Link>
+          </div>
         </div>
       </CardHeader>
       
@@ -222,36 +424,120 @@ export default function CollegeTable({
         
         <ErrorDisplay
           error={error}
-          onRetry={() => fetchColleges(pagination.page, searchTerm)}
+          onRetry={() => {
+            const filters: any = {};
+            if (filterTier !== 'all') filters.tier = filterTier;
+            if (filterStatus !== 'all') filters.status = filterStatus;
+            
+            fetchColleges(pagination.page, searchTerm, filters);
+          }}
           onDismiss={() => setError(null)}
           showRetry={true}
         />
 
-        {/* Search Bar */}
-        {showSearch && (
-          <div className="mb-6">
-            <Label htmlFor="search" className="sr-only">Search colleges</Label>
-            <Input
-              id="search"
-              type="text"
-              placeholder="Search colleges by name, address, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          <div className="flex gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <Label htmlFor="search" className="sr-only">Search colleges</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  type="text"
+                  placeholder="Search colleges by name, address, or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-2">
+              <select
+                value={filterTier}
+                onChange={(e) => setFilterTier(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="all">All Tiers</option>
+                <option value="free">Free</option>
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
-        )}
+
+          {/* Bulk Actions */}
+          {selectedColleges.size > 0 && (
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <span className="text-sm text-gray-600">
+                {selectedColleges.size} college(s) selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('activate')}
+                  disabled={bulkActionDialog.isLoading}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Activate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('deactivate')}
+                  disabled={bulkActionDialog.isLoading}
+                >
+                  <Ban className="mr-2 h-4 w-4" />
+                  Deactivate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                  disabled={bulkActionDialog.isLoading}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Colleges Table */}
         {colleges.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            {searchTerm ? 'No colleges found matching your search.' : 'No colleges found.'}
+            {searchTerm || filterTier !== 'all' || filterStatus !== 'all' 
+              ? 'No colleges found matching your search and filters.' 
+              : 'No colleges found.'
+            }
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
+                  <th className="text-left p-3">
+                    <Checkbox
+                      checked={selectedColleges.size === colleges.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </th>
                   <th 
                     className="text-left p-3 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleSort('name')}
@@ -260,7 +546,8 @@ export default function CollegeTable({
                       Name {getSortIndicator('name')}
                     </div>
                   </th>
-                  <th className="text-left p-3">Address</th>
+                  <th className="text-left p-3">Subscription</th>
+                  <th className="text-left p-3">Users</th>
                   <th className="text-left p-3">Contact</th>
                   <th 
                     className="text-left p-3 cursor-pointer hover:bg-gray-50"
@@ -278,6 +565,12 @@ export default function CollegeTable({
                 {colleges.map((college) => (
                   <tr key={college.id} className="border-b hover:bg-gray-50">
                     <td className="p-3">
+                      <Checkbox
+                        checked={selectedColleges.has(college.id)}
+                        onCheckedChange={(checked) => handleSelectCollege(college.id, checked as boolean)}
+                      />
+                    </td>
+                    <td className="p-3">
                       <div className="font-medium">{college.name}</div>
                       {college.website && (
                         <a 
@@ -291,7 +584,15 @@ export default function CollegeTable({
                       )}
                     </td>
                     <td className="p-3">
-                      {college.address || 'No address'}
+                      <Badge className={subscriptionTierColors[college.subscriptionTier]}>
+                        {subscriptionTierLabels[college.subscriptionTier]}
+                      </Badge>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">{college.userCount}</span>
+                      </div>
                     </td>
                     <td className="p-3">
                       <div className="space-y-1">
@@ -329,11 +630,26 @@ export default function CollegeTable({
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDeleteClick(college.id, college.name)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleStatusToggle(college.id, college.isActive)}
+                          className={college.isActive 
+                            ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
+                            : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                          }
                         >
-                          Delete
+                          {college.isActive ? 'Deactivate' : 'Activate'}
                         </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleDeleteClick(college.id, college.name)}>
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
@@ -383,26 +699,42 @@ export default function CollegeTable({
               </Button>
             </div>
           </div>
-                 )}
-       </CardContent>
+        )}
+      </CardContent>
 
-       {/* Delete Confirmation Dialog */}
-       <ConfirmDialog
-         open={deleteDialog.open}
-         onOpenChange={(open) => !open && handleDeleteCancel()}
-         title="Delete College"
-         description={
-           deleteDialog.college
-             ? `Are you sure you want to delete "${deleteDialog.college.name}"? This action cannot be undone and will permanently remove the college from the system.`
-             : ''
-         }
-         confirmText="Delete College"
-         cancelText="Cancel"
-         onConfirm={handleDeleteConfirm}
-         onCancel={handleDeleteCancel}
-         variant="destructive"
-         isLoading={deleteDialog.isLoading}
-       />
-     </Card>
-   );
- }
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !open && handleDeleteCancel()}
+        title="Delete College"
+        description={
+          deleteDialog.college
+            ? `Are you sure you want to delete "${deleteDialog.college.name}"? This action cannot be undone and will permanently remove the college from the system.`
+            : ''
+        }
+        confirmText="Delete College"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        variant="destructive"
+        isLoading={deleteDialog.isLoading}
+      />
+
+      {/* Bulk Action Confirmation Dialog */}
+      <ConfirmDialog
+        open={bulkActionDialog.open}
+        onOpenChange={(open) => !open && setBulkActionDialog({ open: false, action: '', isLoading: false })}
+        title={`Bulk ${bulkActionDialog.action.charAt(0).toUpperCase() + bulkActionDialog.action.slice(1)}`}
+        description={
+          `Are you sure you want to ${bulkActionDialog.action} ${selectedColleges.size} selected college(s)? This action will affect all selected colleges.`
+        }
+        confirmText={`Confirm ${bulkActionDialog.action}`}
+        cancelText="Cancel"
+        onConfirm={() => handleBulkAction(bulkActionDialog.action)}
+        onCancel={() => setBulkActionDialog({ open: false, action: '', isLoading: false })}
+        variant={bulkActionDialog.action === 'delete' ? 'destructive' : 'default'}
+        isLoading={bulkActionDialog.isLoading}
+      />
+    </Card>
+  );
+}

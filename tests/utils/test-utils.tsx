@@ -1,7 +1,6 @@
-import React, { ReactElement } from 'react'
+import React, { ReactElement, ReactNode } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { SessionProvider } from 'next-auth/react'
-import { PrismaClient } from '@prisma/client'
 
 // Mock Prisma Client for testing
 export const createMockPrismaClient = () => ({
@@ -33,10 +32,10 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 
 const AllTheProviders = ({ 
   children, 
-  session = null, 
-  prisma = createMockPrismaClient() 
+  session, 
+  prisma 
 }: { 
-  children: React.ReactNode
+  children: ReactNode
   session?: any
   prisma?: any
 }) => {

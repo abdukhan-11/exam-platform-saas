@@ -126,7 +126,7 @@ export const getEnvironmentConfig = () => {
         },
       }
       
-    case 'staging':
+    case 'test':
       return {
         ...databaseConfig,
         connectionPool: {

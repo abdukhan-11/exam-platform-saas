@@ -1,15 +1,13 @@
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import { db } from '@/lib/db';
-import { verifyPassword } from '@/lib/auth/password';
-import { UserJWT, AppRole, isValidRole } from '@/types/auth';
+import { prisma } from '../db';
+import { verifyPassword } from './password';
+import { UserJWT, AppRole, isValidRole } from '../../types/auth';
 import { UserRole } from '@prisma/client';
-import { env } from '@/lib/env';
+import { env } from '../env';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 1 day for regular users
@@ -36,7 +34,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // First resolve college
-          const college = await db.college.findUnique({
+          const college = await prisma.college.findUnique({
             where: { 
               username: credentials.collegeUsername,
               isActive: true 
@@ -48,7 +46,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Try to find user in the specific college
-          const user = await db.user.findFirst({ 
+          const user = await prisma.user.findFirst({ 
             where: { 
               email: credentials.email,
               collegeId: college.id,
@@ -94,7 +92,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // First resolve college
-          const college = await db.college.findUnique({
+          const college = await prisma.college.findUnique({
             where: { 
               username: credentials.collegeUsername,
               isActive: true 
@@ -106,7 +104,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Try to find student in the specific college
-          const student = await db.user.findFirst({ 
+          const student = await prisma.user.findFirst({ 
             where: { 
               rollNo: credentials.rollNo,
               collegeId: college.id,
@@ -149,7 +147,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // Find super admin
-          const superAdmin = await db.superAdmin.findUnique({ 
+          const superAdmin = await prisma.superAdmin.findUnique({ 
             where: { email: credentials.email } 
           });
           
@@ -203,7 +201,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'google') {
         // For Google OAuth, we might need to create or find the user
         // This is a simplified version - you might want to enhance this
-        const existingUser = await db.user.findUnique({
+        const existingUser = await prisma.user.findUnique({
           where: { email: token.email! },
         });
         
@@ -215,7 +213,7 @@ export const authOptions: NextAuthOptions = {
           token.collegeId = existingUser.collegeId;
         } else {
           // Create new user for Google OAuth
-          const newUser = await db.user.create({
+          const newUser = await prisma.user.create({
             data: {
               name: token.name!,
               email: token.email!,

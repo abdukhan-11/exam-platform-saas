@@ -44,18 +44,27 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
   const [loading, setLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [csvData, setCsvData] = useState('');
-  const [defaultRole, setDefaultRole] = useState(UserRole.STUDENT);
+  const [defaultRole, setDefaultRole] = useState<UserRole>(UserRole.STUDENT);
 
   const canBulkImport = session?.user && PermissionService.hasPermission(session.user.role, Permission.BULK_IMPORT_USERS);
 
   const availableRoles = [
     { value: UserRole.STUDENT, label: 'Student' },
     { value: UserRole.TEACHER, label: 'Teacher' },
+    { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
+    { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
   ];
 
-  if (canBulkImport && session?.user.role === UserRole.COLLEGE_ADMIN) {
-    availableRoles.push({ value: UserRole.COLLEGE_ADMIN, label: 'College Admin' });
-  }
+  // Filter roles based on user permissions
+  const filteredRoles = availableRoles.filter(role => {
+    if (session?.user.role === UserRole.SUPER_ADMIN) {
+      return true; // Super admin can assign any role
+    }
+    if (session?.user.role === UserRole.COLLEGE_ADMIN) {
+      return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
+    }
+    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+  });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -189,7 +198,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableRoles.map((role) => (
+                    {filteredRoles.map((role) => (
                       <SelectItem key={role.value} value={role.value}>
                         {role.label}
                       </SelectItem>
@@ -272,9 +281,9 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   Import Results
-                  {importResult.success > 0 && importResult.failed === 0 ? (
+                  {importResult.successfulImports > 0 && importResult.failedImports === 0 ? (
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : importResult.failed > 0 ? (
+                  ) : importResult.failedImports > 0 ? (
                     <XCircle className="h-5 w-5 text-red-600" />
                   ) : (
                     <AlertCircle className="h-5 w-5 text-yellow-600" />

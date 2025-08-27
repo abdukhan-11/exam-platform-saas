@@ -1,14 +1,51 @@
 import { PrismaClient, User, UserRole, College } from '@prisma/client';
 import { AuditLogger } from '@/lib/security/audit-logger';
 
-export interface UserProfile extends User {
-  college: College;
-  department?: string;
-  position?: string;
-  phone?: string;
-  bio?: string;
-  avatar?: string;
-  preferences?: any;
+// Define a clean interface that matches the actual Prisma schema
+export interface UserProfile {
+  // Core User fields (matching Prisma schema exactly)
+  id: string;
+  name: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  rollNo: string | null;
+  password: string;
+  role: UserRole;
+  isActive: boolean;
+  collegeId: string | null;
+  department: string | null;
+  position: string | null;
+  phone: string | null;
+  bio: string | null;
+  avatar: string | null;
+  preferences: any;
+  createdAt: Date;
+  updatedAt: Date;
+  
+  // Relations
+  college: College | null;
+  
+  // Role-specific fields (extensions)
+  teacherFields?: {
+    subjects?: string[];
+    qualifications?: string[];
+    experience?: number;
+    officeHours?: string;
+    officeLocation?: string;
+  };
+  studentFields?: {
+    studentId?: string;
+    year?: number;
+    major?: string;
+    gpa?: number;
+    expectedGraduation?: Date;
+  };
+  collegeAdminFields?: {
+    permissions?: string[];
+    department?: string;
+    responsibilities?: string[];
+  };
 }
 
 export interface ProfileUpdateData {
@@ -314,7 +351,7 @@ export class ProfileService {
   /**
    * Enrich user profile with role-specific fields
    */
-  private async enrichProfileWithRoleFields(user: User & { college: College }): Promise<UserProfile> {
+  private async enrichProfileWithRoleFields(user: User & { college: College | null }): Promise<UserProfile> {
     const profile = { ...user } as UserProfile;
 
     // Add role-specific fields based on user role

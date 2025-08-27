@@ -173,8 +173,8 @@ export class BulkOperationsService {
         // Create user
         const user = await this.prisma.user.create({
           data: {
-            email: userData.email,
             name: userData.name,
+            email: userData.email,
             password: hashedPassword,
             role: userData.role,
             collegeId,
@@ -182,7 +182,6 @@ export class BulkOperationsService {
             position: userData.position,
             phone: userData.phone,
             isActive: userData.isActive ?? true,
-            emailVerified: new Date(),
           },
         });
 
@@ -338,7 +337,7 @@ export class BulkOperationsService {
   /**
    * Generate CSV data
    */
-  private generateCSV(users: Array<User & { college: College }>): string {
+  private generateCSV(users: Array<User & { college: College | null }>): string {
     const headers = [
       'ID',
       'Name',
@@ -361,7 +360,7 @@ export class BulkOperationsService {
       user.department || '',
       user.position || '',
       user.phone || '',
-      user.college.name,
+      user.college?.name || 'No College',
       user.isActive ? 'Yes' : 'No',
       user.createdAt.toISOString(),
       user.updatedAt.toISOString(),
@@ -377,7 +376,7 @@ export class BulkOperationsService {
   /**
    * Generate Excel data (placeholder - would need xlsx library)
    */
-  private async generateExcel(users: Array<User & { college: College }>): Promise<Buffer> {
+  private async generateExcel(users: Array<User & { college: College | null }>): Promise<Buffer> {
     // This would require installing a library like 'xlsx'
     // For now, return CSV data as buffer
     const csvData = this.generateCSV(users);

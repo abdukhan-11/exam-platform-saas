@@ -7,7 +7,6 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
   password: 'hashed-password',
   role: UserRole.STUDENT,
   collegeId: 'college-123',
-  emailVerified: new Date(),
   image: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -17,7 +16,6 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
 export const createMockCollege = (overrides: Partial<College> = {}): College => ({
   id: 'college-123',
   name: 'Test College',
-  slug: 'test-college',
   description: 'A test college for testing purposes',
   logo: null,
   website: 'https://testcollege.edu',
@@ -47,7 +45,6 @@ export const createMockColleges = (count: number): College[] => {
     createMockCollege({
       id: `college-${index + 1}`,
       name: `College ${index + 1}`,
-      slug: `college-${index + 1}`,
       email: `admin@college${index + 1}.edu`,
     })
   )
