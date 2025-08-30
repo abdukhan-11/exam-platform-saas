@@ -1,58 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { CollegeSelectionResponse } from '@/types/auth';
 import { z } from 'zod';
+import { db } from '@/lib/db';
+import { consumeRateLimit } from '@/lib/security/rate-limit';
 
-const resolveCollegeSchema = z.object({
-  collegeUsername: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/, {
-    message: 'College username can only contain letters, numbers, hyphens, and underscores'
-  })
+const BodySchema = z.object({
+  collegeUsername: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { collegeUsername } = resolveCollegeSchema.parse(body);
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rl = consumeRateLimit({ ip, identifier: 'resolve-college', category: 'auth' });
+    if (!rl.allowed) return NextResponse.json({ success: false, error: 'Too Many Requests' }, { status: 429 });
 
-    // Find college by username
-    const college = await db.college.findUnique({
-      where: { 
-        username: collegeUsername,
-        isActive: true 
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        isActive: true
-      }
-    });
-
-    if (!college) {
-      return NextResponse.json<CollegeSelectionResponse>({
-        success: false,
-        error: 'College not found or inactive'
-      }, { status: 404 });
+    const json = await req.json();
+    const parsed = BodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 });
     }
 
-    return NextResponse.json<CollegeSelectionResponse>({
+    const username = parsed.data.collegeUsername.trim();
+    const college = await db.college.findUnique({ where: { username } });
+
+    if (!college || !college.isActive) {
+      return NextResponse.json({ success: false, error: 'College not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({
       success: true,
-      college
+      college: {
+        id: college.id,
+        name: college.name,
+        username: college.username,
+        code: college.code,
+      },
     });
-
-  } catch (error) {
-    console.error('Error resolving college:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json<CollegeSelectionResponse>({
-        success: false,
-        error: 'Invalid college username format'
-      }, { status: 400 });
-    }
-
-    return NextResponse.json<CollegeSelectionResponse>({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   }
 }

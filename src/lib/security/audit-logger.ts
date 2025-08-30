@@ -135,7 +135,7 @@ class AuditLoggerService {
    * Log authentication event
    */
   logAuthentication(
-    event: 'login_success' | 'login_failure' | 'logout' | 'password_reset' | 'account_locked' | 'session_expired',
+    event: 'login_success' | 'login_failure' | 'logout' | 'password_reset' | 'account_locked' | 'session_expired' | 'session_started',
     details: {
       userId?: string;
       sessionId?: string;
@@ -203,7 +203,7 @@ class AuditLoggerService {
    * Log security event
    */
   logSecurity(
-    event: 'suspicious_activity' | 'brute_force_attempt' | 'vpn_detected' | 'proxy_detected' | 'tor_detected' | 'device_mismatch' | 'location_change',
+    event: 'suspicious_activity' | 'brute_force_attempt' | 'vpn_detected' | 'proxy_detected' | 'tor_detected' | 'device_mismatch' | 'location_change' | 'report_generated' | 'report_generation_failed' | 'report_notification_sent' | 'violation_integration_initialized' | 'violation_processed' | 'violation_processing_failed' | 'incident_report_generated' | 'violation_escalated' | 'violation_report_generated' | 'security_assessment' | 'authentication_blocked',
     details: {
       userId?: string;
       sessionId?: string;
@@ -213,6 +213,8 @@ class AuditLoggerService {
       severity: 'low' | 'medium' | 'high' | 'critical';
       description: string;
       metadata?: Record<string, any>;
+      // Allow extra fields without type errors for flexibility
+      [key: string]: any;
     }
   ): void {
     this.log({
@@ -228,6 +230,8 @@ class AuditLoggerService {
         severity: details.severity,
         description: details.description,
         ...details.metadata,
+        // Preserve any extra provided fields in details for debugging context
+        ...Object.fromEntries(Object.entries(details).filter(([k]) => !['userId','sessionId','ipAddress','userAgent','collegeId','severity','description','metadata'].includes(k)))
       },
     });
   }

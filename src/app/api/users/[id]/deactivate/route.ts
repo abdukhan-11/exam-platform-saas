@@ -24,19 +24,20 @@ export async function POST(
     const existingUser = await userManagementService.findUserByEmailOrRollNo(
       undefined,
       undefined,
-      session.user.collegeId
+      session.user.collegeId || undefined
     );
 
     if (!existingUser || existingUser.id !== params.id) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check college access
-    if (!PermissionService.canAccessCollege(
-      session.user.role,
-      session.user.collegeId,
-      existingUser.collegeId
-    )) {
+    // Check college access (only if both college IDs are defined)
+    if (session.user.collegeId && existingUser.collegeId &&
+        !PermissionService.canAccessCollege(
+          session.user.role,
+          session.user.collegeId,
+          existingUser.collegeId
+        )) {
       return NextResponse.json({ error: 'Cannot deactivate this user' }, { status: 403 });
     }
 

@@ -98,6 +98,13 @@ global.console = {
 // Setup test environment
 beforeEach(() => {
   jest.clearAllMocks()
+  // Guard for canvas in jsdom: avoid getContext errors
+  if (typeof HTMLCanvasElement !== 'undefined') {
+    const proto = HTMLCanvasElement.prototype as any
+    if (!proto.getContext) {
+      proto.getContext = () => null
+    }
+  }
 })
 
 afterEach(() => {

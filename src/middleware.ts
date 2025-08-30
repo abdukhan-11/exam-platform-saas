@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import type { NextRequestWithAuth } from 'next-auth/middleware';
 import { AppRole, isValidRole } from '@/types/auth';
 
@@ -99,7 +100,68 @@ export default withAuth(
     }
 
     // Default: allow access for authenticated users
-    return NextResponse.next();
+    const res = NextResponse.next();
+
+    // Security headers
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Basic CSP (can be customized)
+    const appOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN || '';
+    const sentryIngest = process.env.NEXT_PUBLIC_SENTRY_DSN ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).host : '';
+    const connectSrc = ["'self'", appOrigin, 'https://fonts.googleapis.com', 'https://fonts.gstatic.com']
+      .concat(sentryIngest ? [`https://${sentryIngest}`] : [])
+      .filter(Boolean)
+      .join(' ');
+    res.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        `connect-src ${connectSrc}`,
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join('; ')
+    );
+
+    // HTTPS enforcement in production
+    if (process.env.NODE_ENV === 'production') {
+      res.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+      const proto = req.headers.get('x-forwarded-proto');
+      if (proto && proto !== 'https') {
+        const httpsUrl = new URL(req.url);
+        httpsUrl.protocol = 'https:';
+        return NextResponse.redirect(httpsUrl);
+      }
+    }
+
+    // CORS for API routes (allowlist + OPTIONS preflight)
+    if (pathname.startsWith('/api/')) {
+      const origin = req.headers.get('origin') || '';
+      const allowlist = [
+        process.env.NEXT_PUBLIC_APP_ORIGIN || '',
+        process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      ].filter(Boolean);
+
+      if (allowlist.includes(origin)) {
+        res.headers.set('Access-Control-Allow-Origin', origin);
+        res.headers.set('Vary', 'Origin');
+        res.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+        res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.headers.set('Access-Control-Allow-Credentials', 'true');
+      }
+
+      if (req.method === 'OPTIONS') {
+        return new NextResponse(null, { status: 204, headers: res.headers });
+      }
+    }
+
+    return res;
   },
   {
     callbacks: {
@@ -112,6 +174,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/api/protected/:path*',
+    '/api/:path*',
     '/admin/:path*',
     '/college/select/:path*',
   ],

@@ -273,6 +273,23 @@ class SecurityService {
       maxWindowBlurs: 5,
       screenshotInterval: 30,
       heartbeatInterval: 10,
+      enableScreenRecordingDetection: false,
+      enableNetworkMonitoring: false,
+      enableAdvancedClipboardMonitoring: false,
+      enableAdvancedAntiDebugging: false,
+      enableBehaviorAnalysis: false,
+      enableTimeBasedAnalysis: false,
+      behaviorAnalysisInterval: 60,
+      anomalyThreshold: 70,
+      enablePatternRecognition: false,
+      maxCoordinatedAttempts: 0,
+      enableSecureCommunication: false,
+      maxClipboardOperations: 0,
+      maxNetworkRequests: 0,
+      allowedDomains: [],
+      enableMouseTracking: false,
+      enableKeystrokeAnalysis: false,
+      enableGazeTracking: false,
       ...config,
     };
 
@@ -302,16 +319,16 @@ class SecurityService {
   ): SessionTimeoutStatus {
     const status = sessionTimeoutService.startSession(sessionId, userId, role, isExam);
 
-    // Log session start
+    // Log session start (conform to audit logger typing)
     auditLogger.logAuthentication('session_started', {
       userId,
       sessionId,
       role,
-      details: {
-        isExam,
-        timeoutDuration: status.timeRemaining,
-        canExtend: status.canExtend,
-      },
+      ipAddress: undefined,
+      userAgent: undefined,
+      collegeId: undefined,
+      reason: undefined,
+      attempts: undefined,
     });
 
     return status;

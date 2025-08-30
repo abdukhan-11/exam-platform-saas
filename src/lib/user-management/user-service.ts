@@ -1,4 +1,4 @@
-import { PrismaClient, User, UserRole, College } from '@prisma/client';
+import { PrismaClient, Prisma, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -38,9 +38,7 @@ export const UserInvitationSchema = z.object({
   message: z.string().optional(),
 });
 
-export interface UserWithCollege extends User {
-  college: College | null;
-}
+export type UserWithCollege = Prisma.UserGetPayload<{ include: { college: true } }>;
 
 export interface UserInvitation {
   id: string;
@@ -154,7 +152,7 @@ export class UserManagementService {
       updatedBy: 'system',
     });
 
-    return user;
+    return user as UserWithCollege;
   }
 
   /**
@@ -175,7 +173,7 @@ export class UserManagementService {
       reason: 'Manual deactivation',
     });
 
-    return user;
+    return user as UserWithCollege;
   }
 
   /**
@@ -196,7 +194,7 @@ export class UserManagementService {
       reason: 'Manual reactivation',
     });
 
-    return user;
+    return user as UserWithCollege;
   }
 
   /**
@@ -226,7 +224,7 @@ export class UserManagementService {
       include: {
         college: true,
       },
-    });
+    }) as UserWithCollege | null;
   }
 
   /**
@@ -286,7 +284,7 @@ export class UserManagementService {
     ]);
 
     return {
-      users,
+      users: users as UserWithCollege[],
       total,
       page,
       limit,

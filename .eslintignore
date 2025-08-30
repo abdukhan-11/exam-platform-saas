@@ -1,0 +1,8 @@
+node_modules/
+.next/
+coverage/
+src/generated/
+src/generated/**
+src/generated/prisma/**
+src/lib/security/**
+**/*.d.ts

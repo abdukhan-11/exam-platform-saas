@@ -68,7 +68,7 @@ export const PasswordResetEmail = ({
           </Text>
 
           <Text style={text}>
-            If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+            If you didn&apos;t request a password reset, you can safely ignore this email. Your password will remain unchanged.
           </Text>
 
           <Text style={text}>

@@ -11,7 +11,7 @@ export default function ForbiddenPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-destructive">Access Forbidden</CardTitle>
             <CardDescription>
-              You don't have permission to access this page.
+              You don&apos;t have permission to access this page.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

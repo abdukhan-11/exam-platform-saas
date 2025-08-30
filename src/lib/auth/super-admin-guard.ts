@@ -3,7 +3,7 @@ import { getToken } from 'next-auth/jwt';
 import { AppRole } from '@/types/auth';
 import { verifyAccessToken } from '@/lib/auth/token-service';
 import { auditLogger } from '@/lib/security/audit-logger';
-import { securityService } from '@/lib/security/security-service';
+import { securityService, SecurityContext } from '@/lib/security/security-service';
 import { env } from '@/lib/env';
 
 export interface SuperAdminContext {
@@ -21,18 +21,19 @@ export function withSuperAdmin(
   requiredPermissions: string[] = []
 ) {
   return async (req: NextRequest, ...args: unknown[]) => {
+    const startTime = Date.now();
+
+    // Get client IP address
+    const ipAddress = req.headers.get('x-forwarded-for') ||
+                     req.headers.get('x-real-ip') ||
+                     'unknown';
+
+    // Get user agent
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    let securityContext: SecurityContext | undefined;
+
     try {
-      const startTime = Date.now();
-      
-      // Get client IP address
-      const ipAddress = req.headers.get('x-forwarded-for') || 
-                       req.headers.get('x-real-ip') || 
-                       req.ip || 
-                       'unknown';
-
-      // Get user agent
-      const userAgent = req.headers.get('user-agent') || 'unknown';
-
       // Try NextAuth token first
       let token = await getToken({ req, secret: env.NEXTAUTH_SECRET });
       let role: AppRole | undefined = token?.role as AppRole | undefined;
@@ -106,18 +107,18 @@ export function withSuperAdmin(
       }
 
       // Perform security assessment
-      const securityContext = {
+      securityContext = {
         userId,
-        sessionId: token.sessionId || 'unknown',
+        sessionId: (typeof token?.sessionId === 'string' ? token.sessionId : 'unknown'),
         ipAddress,
         userAgent,
-        collegeId: token.collegeId,
+        collegeId: token?.collegeId || undefined,
         role,
         examId: undefined,
         isExam: false
       };
 
-      const securityAssessment = await securityService.assessSecurity(securityContext);
+      const securityAssessment = await securityService.assessSecurity(securityContext!);
       
       // Check if security assessment indicates high risk
       if (securityAssessment.overallRisk === 'critical' || securityAssessment.overallRisk === 'high') {
@@ -147,7 +148,7 @@ export function withSuperAdmin(
       // Create super admin context
       const context: SuperAdminContext = {
         userId,
-        sessionId: token.sessionId || 'unknown',
+        sessionId: (typeof token?.sessionId === 'string' ? token.sessionId : 'unknown'),
         ipAddress,
         userAgent,
         timestamp: Date.now(),
@@ -174,7 +175,9 @@ export function withSuperAdmin(
       });
 
       // Record activity for security monitoring
-      securityService.recordActivity(securityContext);
+      if (securityContext) {
+        securityService.recordActivity(securityContext);
+      }
 
       // Call the handler with the context
       const response = await handler(req, context, ...args);
@@ -207,7 +210,7 @@ export function withSuperAdmin(
         category: 'authorization',
         event: 'super_admin_guard_error',
         userId: 'unknown',
-        ipAddress: req.headers.get('x-forwarded-for') || req.ip || 'unknown',
+        ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
         userAgent: req.headers.get('user-agent') || 'unknown',
         details: { 
           path: req.nextUrl.pathname,

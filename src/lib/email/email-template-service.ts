@@ -47,17 +47,19 @@ export class EmailTemplateService {
     try {
       // For now, we'll store templates in memory since we don't have a template table
       // In a real implementation, this would be stored in the database
+      const templateId = `template_${Date.now()}`;
+      const { id: _, ...restTemplateData } = templateData; // Exclude id from spread
       const template: EmailTemplateData = {
-        id: `template_${Date.now()}`,
-        ...templateData,
+        ...restTemplateData,
+        id: templateId,
         status: templateData.status || 'draft'
       };
 
       // Store in memory (replace with database storage)
-      if (!global.emailTemplates) {
-        global.emailTemplates = new Map();
+      if (!(global as any).emailTemplates) {
+        (global as any).emailTemplates = new Map<string, EmailTemplateData>();
       }
-      global.emailTemplates.set(template.id, template);
+      (global as any).emailTemplates.set(String(template.id), template);
 
       return template;
     } catch (error) {
@@ -208,11 +210,13 @@ export class EmailTemplateService {
   async updateTemplate(templateId: string, updates: Partial<EmailTemplateData>): Promise<EmailTemplateData> {
     try {
       // For now, update in memory
-      if (global.emailTemplates && global.emailTemplates.has(templateId)) {
-        const existingTemplate = global.emailTemplates.get(templateId);
-        const updatedTemplate = { ...existingTemplate, ...updates };
-        global.emailTemplates.set(templateId, updatedTemplate);
-        return updatedTemplate;
+      if ((global as any).emailTemplates && (global as any).emailTemplates.has(templateId)) {
+        const existingTemplate = (global as any).emailTemplates.get(templateId) as EmailTemplateData | undefined;
+        if (existingTemplate) {
+          const updatedTemplate: EmailTemplateData = { ...existingTemplate, ...updates };
+          (global as any).emailTemplates.set(templateId, updatedTemplate);
+          return updatedTemplate;
+        }
       }
 
       throw new Error('Template not found');
@@ -228,8 +232,8 @@ export class EmailTemplateService {
   async deleteTemplate(templateId: string): Promise<boolean> {
     try {
       // For now, delete from memory
-      if (global.emailTemplates && global.emailTemplates.has(templateId)) {
-        global.emailTemplates.delete(templateId);
+      if ((global as any).emailTemplates && (global as any).emailTemplates.has(templateId)) {
+        (global as any).emailTemplates.delete(templateId);
         return true;
       }
       return false;
@@ -338,18 +342,20 @@ export class EmailTemplateService {
         throw new Error('Template not found');
       }
 
+      const duplicatedTemplateId = `template_${Date.now()}`;
+      const { id: _, ...restOriginalTemplate } = originalTemplate; // Exclude id from spread
       const duplicatedTemplate: EmailTemplateData = {
-        ...originalTemplate,
-        id: `template_${Date.now()}`,
+        ...restOriginalTemplate,
+        id: duplicatedTemplateId,
         name: newName,
         status: 'draft'
       };
 
       // Store the duplicated template
-      if (!global.emailTemplates) {
-        global.emailTemplates = new Map();
+      if (!(global as any).emailTemplates) {
+        (global as any).emailTemplates = new Map<string, EmailTemplateData>();
       }
-      global.emailTemplates.set(duplicatedTemplate.id, duplicatedTemplate);
+      (global as any).emailTemplates.set(String(duplicatedTemplate.id), duplicatedTemplate);
 
       return duplicatedTemplate;
     } catch (error) {

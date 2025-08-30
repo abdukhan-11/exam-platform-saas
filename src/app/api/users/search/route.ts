@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
         department: (user as any).department,
         position: (user as any).position,
         isActive: user.isActive,
-        college: {
+        college: user.college ? {
           id: user.college.id,
           name: user.college.name,
-        },
+        } : null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       })),

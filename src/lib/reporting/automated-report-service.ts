@@ -15,6 +15,7 @@ export interface ReportSchedule {
   filters?: Record<string, any>;
   customFields?: string[];
   includeCharts?: boolean;
+  createdBy?: string; // User ID who created the schedule
   createdAt: Date;
   updatedAt: Date;
 }
@@ -392,7 +393,7 @@ export class AutomatedReportService {
     const now = new Date();
     const [hours, minutes] = time.split(':').map(Number);
     
-    let nextRun = new Date(now);
+    const nextRun = new Date(now);
     nextRun.setHours(hours, minutes, 0, 0);
 
     // If the time has already passed today, move to next occurrence

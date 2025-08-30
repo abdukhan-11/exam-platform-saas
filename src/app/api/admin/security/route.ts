@@ -24,9 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get client IP address
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     request.ip || 
+    const ipAddress = request.headers.get('x-forwarded-for') ||
+                     request.headers.get('x-real-ip') ||
                      'unknown';
 
     // Log access to security dashboard
@@ -136,10 +135,10 @@ async function getAccessControlData() {
 async function getRecentAuditLogs() {
   try {
     // Get recent audit logs from the audit logger service
-    const logs = auditLogger.getRecentLogs(20);
+    const logs = auditLogger.getLogs({ limit: 20 });
     
     // Transform to match frontend expectations
-    return logs.map(log => ({
+    return logs.map((log: any) => ({
       id: log.id,
       timestamp: new Date(log.timestamp).toISOString(),
       level: log.level,

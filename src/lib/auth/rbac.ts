@@ -177,7 +177,7 @@ export async function guardStudent(req: NextRequest) {
 export function withEndpointPermission(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>) {
   return async (req: NextRequest, ...args: unknown[]) => {
     try {
-      let token = await getToken({ req, secret: env.NEXTAUTH_SECRET });
+      const token = await getToken({ req, secret: env.NEXTAUTH_SECRET });
       let role: AppRole | undefined = token?.role as AppRole | undefined;
 
       if (!role) {

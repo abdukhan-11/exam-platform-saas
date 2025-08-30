@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
+import { AppRole, isValidRole } from '@/types/auth';
+import { UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 export async function GET(request: NextRequest) {
@@ -192,11 +194,18 @@ async function handleBulkPasswordReset(userIds: string[]) {
 }
 
 async function handleBulkRoleChange(userIds: string[], newRole: string) {
+  // Validate and cast role
+  if (!isValidRole(newRole)) {
+    throw new Error(`Invalid role: ${newRole}`);
+  }
+
+  const userRole = newRole as UserRole;
+
   const updatedUsers = await Promise.all(
     userIds.map(async (userId) => {
       return await prisma.user.update({
         where: { id: userId },
-        data: { role: newRole },
+        data: { role: userRole },
         include: { college: { select: { name: true } } }
       });
     })

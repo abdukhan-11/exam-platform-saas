@@ -5,7 +5,7 @@ import { CustomReportBuilder } from '@/lib/reporting/custom-report-builder';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { format, additionalFilters } = body;
 
@@ -34,7 +34,7 @@ export async function POST(
     const exportResult = await reportBuilder.exportCustomReportQuery(id, format, additionalFilters);
 
     // Return the export result
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(exportResult.data as any, {
       headers: {
         'Content-Type': exportResult.mimeType,
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,
@@ -53,7 +53,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -67,7 +67,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'csv';
     const additionalFilters = searchParams.get('filters') ? JSON.parse(searchParams.get('filters')!) : {};
@@ -76,7 +76,7 @@ export async function GET(
     const exportResult = await reportBuilder.exportCustomReportQuery(id, format as 'csv' | 'excel' | 'pdf', additionalFilters);
 
     // Return the export result
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(exportResult.data as any, {
       headers: {
         'Content-Type': exportResult.mimeType,
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,

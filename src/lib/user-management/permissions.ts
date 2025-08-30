@@ -1,4 +1,7 @@
-import { UserRole } from '@prisma/client';
+import { AppRole } from '@/types/auth';
+
+// Unify with app role type
+export type UserRole = AppRole;
 
 export enum Permission {
   // User Management
@@ -75,16 +78,16 @@ export interface RolePermissions {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
-  [UserRole.SUPER_ADMIN]: {
-    role: UserRole.SUPER_ADMIN,
+  [AppRole.SUPER_ADMIN]: {
+    role: AppRole.SUPER_ADMIN,
     permissions: Object.values(Permission),
     restrictions: {
       collegeScope: false, // Can access all colleges
     },
   },
   
-  [UserRole.COLLEGE_ADMIN]: {
-    role: UserRole.COLLEGE_ADMIN,
+  [AppRole.COLLEGE_ADMIN]: {
+    role: AppRole.COLLEGE_ADMIN,
     permissions: [
       // User Management (within their college)
       Permission.CREATE_USER,
@@ -146,8 +149,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     },
   },
   
-  [UserRole.TEACHER]: {
-    role: UserRole.TEACHER,
+  [AppRole.TEACHER]: {
+    role: AppRole.TEACHER,
     permissions: [
       // User Management (limited - can view students)
       Permission.READ_USER,
@@ -188,8 +191,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     },
   },
   
-  [UserRole.STUDENT]: {
-    role: UserRole.STUDENT,
+  [AppRole.STUDENT]: {
+    role: AppRole.STUDENT,
     permissions: [
       // User Management (own profile only)
       Permission.READ_USER,
@@ -221,48 +224,48 @@ export class PermissionService {
   /**
    * Check if a user has a specific permission
    */
-  static hasPermission(userRole: UserRole, permission: Permission): boolean {
-    const rolePermissions = ROLE_PERMISSIONS[userRole];
+  static hasPermission(userRole: UserRole | string, permission: Permission): boolean {
+    const rolePermissions = ROLE_PERMISSIONS[userRole as UserRole];
     return rolePermissions.permissions.includes(permission);
   }
 
   /**
    * Check if a user has any of the specified permissions
    */
-  static hasAnyPermission(userRole: UserRole, permissions: Permission[]): boolean {
-    return permissions.some(permission => this.hasPermission(userRole, permission));
+  static hasAnyPermission(userRole: UserRole | string, permissions: Permission[]): boolean {
+    return permissions.some(permission => this.hasPermission(userRole as UserRole, permission));
   }
 
   /**
    * Check if a user has all of the specified permissions
    */
-  static hasAllPermissions(userRole: UserRole, permissions: Permission[]): boolean {
-    return permissions.every(permission => this.hasPermission(userRole, permission));
+  static hasAllPermissions(userRole: UserRole | string, permissions: Permission[]): boolean {
+    return permissions.every(permission => this.hasPermission(userRole as UserRole, permission));
   }
 
   /**
    * Get all permissions for a role
    */
-  static getRolePermissions(userRole: UserRole): Permission[] {
-    return ROLE_PERMISSIONS[userRole].permissions;
+  static getRolePermissions(userRole: UserRole | string): Permission[] {
+    return ROLE_PERMISSIONS[userRole as UserRole].permissions;
   }
 
   /**
    * Get role restrictions
    */
-  static getRoleRestrictions(userRole: UserRole): RolePermissions['restrictions'] {
-    return ROLE_PERMISSIONS[userRole].restrictions;
+  static getRoleRestrictions(userRole: UserRole | string): RolePermissions['restrictions'] {
+    return ROLE_PERMISSIONS[userRole as UserRole].restrictions;
   }
 
   /**
    * Check if user can access a specific college
    */
   static canAccessCollege(
-    userRole: UserRole,
+    userRole: UserRole | string,
     userCollegeId: string,
     targetCollegeId: string
   ): boolean {
-    const restrictions = this.getRoleRestrictions(userRole);
+    const restrictions = this.getRoleRestrictions(userRole as UserRole);
     
     // Super admin can access all colleges
     if (!restrictions?.collegeScope) {
@@ -277,7 +280,7 @@ export class PermissionService {
    * Check if user can perform action on a resource
    */
   static canPerformAction(
-    userRole: UserRole,
+    userRole: UserRole | string,
     userCollegeId: string,
     action: Permission,
     resourceCollegeId?: string,
@@ -285,17 +288,17 @@ export class PermissionService {
     userId?: string
   ): boolean {
     // Check basic permission
-    if (!this.hasPermission(userRole, action)) {
+    if (!this.hasPermission(userRole as UserRole, action)) {
       return false;
     }
 
     // Check college scope
-    if (resourceCollegeId && !this.canAccessCollege(userRole, userCollegeId, resourceCollegeId)) {
+    if (resourceCollegeId && !this.canAccessCollege(userRole as UserRole, userCollegeId, resourceCollegeId)) {
       return false;
     }
 
     // Check resource ownership for limited access roles
-    const restrictions = this.getRoleRestrictions(userRole);
+    const restrictions = this.getRoleRestrictions(userRole as UserRole);
     if (restrictions?.limitedAccess && resourceOwnerId && userId) {
       // For limited access roles, check if user owns the resource
       if (restrictions.limitedAccess.includes('own_profile') && resourceOwnerId !== userId) {
@@ -310,14 +313,14 @@ export class PermissionService {
    * Filter resources based on user permissions
    */
   static filterResourcesByPermission<T extends { collegeId: string; createdBy?: string }>(
-    userRole: UserRole,
+    userRole: UserRole | string,
     userCollegeId: string,
     resources: T[],
     permission: Permission
   ): T[] {
     return resources.filter(resource => {
       return this.canPerformAction(
-        userRole,
+        userRole as UserRole,
         userCollegeId,
         permission,
         resource.collegeId,
@@ -329,8 +332,8 @@ export class PermissionService {
   /**
    * Get user's accessible colleges
    */
-  static getAccessibleColleges(userRole: UserRole, userCollegeId: string): string[] {
-    const restrictions = this.getRoleRestrictions(userRole);
+  static getAccessibleColleges(userRole: UserRole | string, userCollegeId: string): string[] {
+    const restrictions = this.getRoleRestrictions(userRole as UserRole);
     
     if (!restrictions?.collegeScope) {
       // Super admin can access all colleges
@@ -345,7 +348,7 @@ export class PermissionService {
    * Validate user action with comprehensive checks
    */
   static validateUserAction(params: {
-    userRole: UserRole;
+    userRole: UserRole | string;
     userCollegeId: string;
     userId: string;
     action: Permission;
@@ -361,7 +364,7 @@ export class PermissionService {
     const { userRole, userCollegeId, userId, action, resource } = params;
 
     // Check basic permission
-    if (!this.hasPermission(userRole, action)) {
+    if (!this.hasPermission(userRole as UserRole, action)) {
       return {
         allowed: false,
         reason: `Role ${userRole} does not have permission ${action}`,
@@ -369,7 +372,7 @@ export class PermissionService {
     }
 
     // Check college scope
-    if (resource?.collegeId && !this.canAccessCollege(userRole, userCollegeId, resource.collegeId)) {
+    if (resource?.collegeId && !this.canAccessCollege(userRole as UserRole, userCollegeId, resource.collegeId)) {
       return {
         allowed: false,
         reason: `Cannot access resources from college ${resource.collegeId}`,

@@ -1,4 +1,4 @@
-import { PrismaClient, User, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { auditLogger } from '@/lib/security/audit-logger';
 import { generateSecureToken } from '@/lib/utils/crypto';
 import { getEmailService } from '@/lib/email/email-service';
@@ -17,7 +17,7 @@ export interface RecoveryRequest {
 }
 
 export interface RecoveryRequestWithUser extends RecoveryRequest {
-  user: User;
+  user: any;
 }
 
 export interface RecoveryOptions {
@@ -50,11 +50,11 @@ export class RecoveryService {
     throw new Error('Recovery service not implemented - database migration required');
   }
 
-  async resetPasswordWithToken(token: string, newPassword: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<User> {
+  async resetPasswordWithToken(token: string, newPassword: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<any> {
     throw new Error('Recovery service not implemented - database migration required');
   }
 
-  async recoverAccountWithToken(token: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<User> {
+  async recoverAccountWithToken(token: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<any> {
     throw new Error('Recovery service not implemented - database migration required');
   }
 
@@ -92,11 +92,11 @@ export class RecoveryService {
     return this.canMakeRecoveryRequest(email);
   }
 
-  async resetPassword(token: string, password: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<User> {
+  async resetPassword(token: string, password: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<any> {
     return this.resetPasswordWithToken(token, password, options);
   }
 
-  async recoverAccount(token: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<User> {
+  async recoverAccount(token: string, options: { ipAddress?: string; userAgent?: string } = {}): Promise<any> {
     return this.recoverAccountWithToken(token, options);
   }
 }

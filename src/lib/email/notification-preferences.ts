@@ -187,7 +187,19 @@ export class NotificationPreferencesService {
       });
 
       // Get optOutTypes from first subscription (assuming they're consistent)
-      const optOutTypes = subscriptions[0]?.optOutTypes || [];
+      let optOutTypes: EventType[] = [];
+      if (subscriptions[0]?.optOutTypes) {
+        try {
+          // Parse JSON string from database
+          const parsed = typeof subscriptions[0].optOutTypes === 'string'
+            ? JSON.parse(subscriptions[0].optOutTypes)
+            : subscriptions[0].optOutTypes;
+          optOutTypes = Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          console.warn('Failed to parse optOutTypes:', error);
+          optOutTypes = [];
+        }
+      }
 
       return {
         userId,
@@ -262,7 +274,7 @@ export class NotificationPreferencesService {
             },
             update: {
               isActive: isEnabled,
-              optOutTypes: mergedPreferences.optOutTypes || [],
+              optOutTypes: JSON.stringify(mergedPreferences.optOutTypes || []),
               preferences: mergedPreferences as any,
             },
             create: {
@@ -271,7 +283,7 @@ export class NotificationPreferencesService {
               notificationChannel: channel,
               collegeId: user.collegeId || '',
               isActive: isEnabled,
-              optOutTypes: mergedPreferences.optOutTypes || [],
+              optOutTypes: JSON.stringify(mergedPreferences.optOutTypes || []),
               preferences: mergedPreferences as any,
             },
           });
@@ -324,7 +336,7 @@ export class NotificationPreferencesService {
       }
 
       // Check if subscription is active and not opted out
-      return subscription.isActive && !subscription.optOutTypes.includes(eventType);
+      return subscription.isActive && (!subscription.optOutTypes || !subscription.optOutTypes.includes(eventType));
     } catch (error) {
       console.error('Error checking notification preferences:', error);
       return true; // Default to sending on error

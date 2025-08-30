@@ -5,7 +5,7 @@ import { CustomReportBuilder } from '@/lib/reporting/custom-report-builder';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { additionalFilters } = body;
 
@@ -39,7 +39,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -53,7 +53,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const additionalFilters = searchParams.get('filters') ? JSON.parse(searchParams.get('filters')!) : {};
 

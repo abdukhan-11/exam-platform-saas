@@ -86,18 +86,17 @@ export function SuccessDisplay({
   autoHide = true,
   autoHideDelay = 3000,
 }: SuccessDisplayProps) {
-  if (!message) return null;
-
-  // Auto-hide after delay
+  // Auto-hide after delay (hooks must not be conditional)
   React.useEffect(() => {
-    if (autoHide && onDismiss) {
+    if (autoHide && onDismiss && message) {
       const timer = setTimeout(() => {
         onDismiss();
       }, autoHideDelay);
-
       return () => clearTimeout(timer);
     }
-  }, [autoHide, autoHideDelay, onDismiss]);
+  }, [autoHide, autoHideDelay, onDismiss, message]);
+
+  if (!message) return null;
 
   return (
     <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">

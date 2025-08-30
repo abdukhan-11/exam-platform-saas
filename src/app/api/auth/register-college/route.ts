@@ -49,11 +49,15 @@ export async function POST(request: NextRequest) {
 
     // Create college and admin user in a transaction
     const result = await db.$transaction(async (tx) => {
+      // Generate college code from username
+      const collegeCode = credentials.username.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
       // Create college
       const college = await tx.college.create({
         data: {
           name: credentials.name,
           username: credentials.username,
+          code: collegeCode,
           email: credentials.email,
           address: credentials.address,
           phone: credentials.phone,

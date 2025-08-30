@@ -70,7 +70,7 @@ export const EmailVerificationEmail = ({
           </Text>
 
           <Text style={text}>
-            If you didn't create an account with us, you can safely ignore this email. Your email address will not be verified.
+            If you didn&apos;t create an account with us, you can safely ignore this email. Your email address will not be verified.
           </Text>
 
           <Text style={text}>

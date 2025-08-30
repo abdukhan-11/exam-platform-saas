@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model SuperAdmin {
@@ -52,6 +53,7 @@ model College {
   eventReminders EventReminder[]
   userInvitations UserInvitation[]
   emailLogs   EmailLog[]
+  gradeBoundaries GradeBoundary[]
 
   @@map("college")
   @@index([isActive])
@@ -226,6 +228,7 @@ model ExamResult {
   score     Int
   totalMarks Int
   percentage Float
+  grade      String?
   startTime DateTime
   endTime   DateTime?
   isCompleted Boolean @default(false)
@@ -243,6 +246,29 @@ model ExamResult {
   @@index([score])
   @@index([percentage])
   @@index([isCompleted])
+}
+
+/// Grading boundaries for converting percentages to grade letters.
+/// If `collegeId` is null and `isDefault` is true, it applies as a global default.
+model GradeBoundary {
+  id            String   @id @default(cuid())
+  collegeId     String?
+  grade         String
+  minPercentage Float
+  maxPercentage Float
+  sortOrder     Int      @default(0)
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  college College? @relation(fields: [collegeId], references: [id])
+
+  @@map("grade_boundary")
+  @@index([collegeId])
+  @@index([isDefault])
+  @@index([minPercentage])
+  @@index([maxPercentage])
 }
 
 model Class {

@@ -1,4 +1,4 @@
-import { PrismaClient, User, UserRole, College } from '@prisma/client';
+import { PrismaClient, Prisma, UserRole } from '@prisma/client';
 import { AuditLogger } from '@/lib/security/audit-logger';
 import { generateSecureToken } from '@/lib/utils/crypto';
 import bcrypt from 'bcryptjs';
@@ -337,7 +337,7 @@ export class BulkOperationsService {
   /**
    * Generate CSV data
    */
-  private generateCSV(users: Array<User & { college: College | null }>): string {
+  private generateCSV(users: Array<Prisma.UserGetPayload<{ include: { college: true } }>>): string {
     const headers = [
       'ID',
       'Name',
@@ -376,7 +376,7 @@ export class BulkOperationsService {
   /**
    * Generate Excel data (placeholder - would need xlsx library)
    */
-  private async generateExcel(users: Array<User & { college: College | null }>): Promise<Buffer> {
+  private async generateExcel(users: Array<Prisma.UserGetPayload<{ include: { college: true } }>>): Promise<Buffer> {
     // This would require installing a library like 'xlsx'
     // For now, return CSV data as buffer
     const csvData = this.generateCSV(users);

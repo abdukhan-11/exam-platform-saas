@@ -174,10 +174,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the college
+    const username = body.name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+    const collegeCode = username.toUpperCase();
+
     const college = await db.college.create({
       data: {
         name: body.name.trim(),
-        username: body.name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, ''), // Generate username from name
+        username: username,
+        code: collegeCode,
         address: body.address?.trim() || null,
         phone: body.phone?.trim() || null,
         email: body.email?.trim() || null,

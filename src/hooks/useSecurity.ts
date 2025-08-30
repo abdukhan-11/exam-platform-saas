@@ -103,7 +103,7 @@ export function useSecurity(options: UseSecurityOptions = {}) {
     }
 
     try {
-      const response = await fetch('/api/security/assess?sessionId=' + (session.sessionId || ''), {
+      const response = await fetch('/api/security/assess', {
         method: 'GET',
       });
 
@@ -133,7 +133,7 @@ export function useSecurity(options: UseSecurityOptions = {}) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId: session.sessionId,
+          // session id managed by server; no client-provided value required
         }),
       });
 
@@ -302,6 +302,64 @@ export function useSecurity(options: UseSecurityOptions = {}) {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
+  }, [session, isExam, examId]);
+
+  // Set up window blur tracking
+  useEffect(() => {
+    if (!session || !isExam) {
+      return;
+    }
+
+    const handleWindowBlur = () => {
+      fetch('/api/security/assess', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          examId,
+          isExam,
+          action: 'window_blur',
+        }),
+      }).catch(console.error);
+    };
+
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, [session, isExam, examId]);
+
+  // Simple devtools detection and reporting
+  useEffect(() => {
+    if (!session || !isExam) {
+      return;
+    }
+
+    let prevOpen = false;
+    const interval = setInterval(() => {
+      const isOpen = (window.outerHeight - window.innerHeight > 200) || (window.outerWidth - window.innerWidth > 200);
+      if (isOpen && !prevOpen) {
+        prevOpen = true;
+        fetch('/api/security/assess', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            examId,
+            isExam,
+            action: 'dev_tools',
+          }),
+        }).catch(console.error);
+      }
+      if (!isOpen) {
+        prevOpen = false;
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [session, isExam, examId]);
 
   // Set up copy/paste prevention for exams

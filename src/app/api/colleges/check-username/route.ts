@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({
         available: false,
-        error: validation.error.errors[0]?.message || 'Invalid username format'
+        error: validation.error.issues[0]?.message || 'Invalid username format'
       }, { status: 400 });
     }
 

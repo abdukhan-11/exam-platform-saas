@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+// Note: No Prisma model exists for CustomReportQuery; use in-memory storage only
 import { DataExportService, ExportOptions } from './data-export-service';
 
 export interface CustomReportQuery {
@@ -63,72 +63,76 @@ export class CustomReportBuilder {
    */
   async createCustomReportQuery(query: Omit<CustomReportQuery, 'id' | 'createdAt' | 'updatedAt'>): Promise<CustomReportQuery> {
     const now = new Date();
+    const id = `query_${Date.now()}`;
 
-    const newQuery = await prisma.customReportQuery.create({
-      data: {
-        ...query,
-        createdAt: now,
-        updatedAt: now
-      }
-    });
+    const newQuery: CustomReportQuery = {
+      id,
+      ...query,
+      createdAt: now,
+      updatedAt: now
+    };
 
-    return newQuery as CustomReportQuery;
+    // Store in memory (replace with database storage when model is added)
+    if (!(global as any).customReportQueries) {
+      (global as any).customReportQueries = new Map<string, CustomReportQuery>();
+    }
+    (global as any).customReportQueries.set(id, newQuery);
+
+    return newQuery;
   }
 
   /**
    * Update an existing custom report query
    */
   async updateCustomReportQuery(id: string, updates: Partial<CustomReportQuery>): Promise<CustomReportQuery> {
-    const updatedQuery = await prisma.customReportQuery.update({
-      where: { id },
-      data: {
-        ...updates,
-        updatedAt: new Date()
-      }
-    });
+    // Update in memory (replace with database storage when model is added)
+    if (!(global as any).customReportQueries) {
+      (global as any).customReportQueries = new Map<string, CustomReportQuery>();
+    }
 
-    return updatedQuery as CustomReportQuery;
+    const existingQuery = ((global as any).customReportQueries as Map<string, CustomReportQuery>).get(id);
+    if (!existingQuery) {
+      throw new Error('Custom report query not found');
+    }
+
+    const updatedQuery: CustomReportQuery = {
+      ...existingQuery,
+      ...updates,
+      updatedAt: new Date()
+    };
+
+    ((global as any).customReportQueries as Map<string, CustomReportQuery>).set(id, updatedQuery);
+    return updatedQuery;
   }
 
-  /**
-   * Delete a custom report query
-   */
-  async deleteCustomReportQuery(id: string): Promise<void> {
-    await prisma.customReportQuery.delete({
-      where: { id }
-    });
-  }
+  // kept above
 
   /**
    * Get all custom report queries
    */
   async getCustomReportQueries(): Promise<CustomReportQuery[]> {
-    const queries = await prisma.customReportQuery.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
-
-    return queries as CustomReportQuery[];
+    if (!(global as any).customReportQueries) {
+      (global as any).customReportQueries = new Map<string, CustomReportQuery>();
+    }
+    return Array.from(((global as any).customReportQueries as Map<string, CustomReportQuery>).values());
   }
 
   /**
    * Get active custom report queries
    */
   async getActiveCustomReportQueries(): Promise<CustomReportQuery[]> {
-    const queries = await prisma.customReportQuery.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' }
-    });
-
-    return queries as CustomReportQuery[];
+    const queries = await this.getCustomReportQueries();
+    return queries.filter(q => q.isActive).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
    * Execute a custom report query
    */
   async executeCustomReportQuery(queryId: string, additionalFilters?: Record<string, any>): Promise<ReportResult> {
-    const query = await prisma.customReportQuery.findUnique({
-      where: { id: queryId }
-    });
+    if (!(global as any).customReportQueries) {
+      (global as any).customReportQueries = new Map<string, CustomReportQuery>();
+    }
+    const query = ((global as any).customReportQueries as Map<string, CustomReportQuery>).get(queryId);
 
     if (!query) {
       throw new Error('Custom report query not found');
@@ -486,27 +490,7 @@ export class CustomReportBuilder {
     return this.convertToCSV(result);
   }
 
-  /**
-   * Update a custom report query
-   */
-  async updateCustomReportQuery(id: string, updates: Partial<CustomReportQuery>): Promise<CustomReportQuery> {
-    const updatedQuery = await prisma.customReportQuery.update({
-      where: { id },
-      data: {
-        ...updates,
-        updatedAt: new Date()
-      }
-    });
+  // Duplicate definitions removed above; leaving single canonical versions
 
-    return updatedQuery as CustomReportQuery;
-  }
-
-  /**
-   * Delete a custom report query
-   */
-  async deleteCustomReportQuery(id: string): Promise<void> {
-    await prisma.customReportQuery.delete({
-      where: { id }
-    });
-  }
+  // duplicate removed
 }

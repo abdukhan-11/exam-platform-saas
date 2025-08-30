@@ -1,4 +1,8 @@
+"use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import dynamic from 'next/dynamic';
+
+const ExamOverview = dynamic(() => import('@/components/student/ExamOverview'), { ssr: false });
 
 export default function StudentDashboard() {
   return (
@@ -41,6 +45,10 @@ export default function StudentDashboard() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-10">
+        <ExamOverview />
       </div>
     </div>
   );

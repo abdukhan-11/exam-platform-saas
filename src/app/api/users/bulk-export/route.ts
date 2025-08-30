@@ -31,24 +31,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const options = bulkExportSchema.parse(body);
 
-    // Check college access
-    if (options.collegeId && !PermissionService.canAccessCollege(
-      session.user.role,
-      session.user.collegeId,
-      options.collegeId
-    )) {
+    // Check college access (only if user has a college ID)
+    if (options.collegeId && session.user.collegeId &&
+        !PermissionService.canAccessCollege(
+          session.user.role,
+          session.user.collegeId,
+          options.collegeId
+        )) {
       return NextResponse.json({ error: 'Cannot export users from this college' }, { status: 403 });
     }
 
     // If no collegeId specified and user is not SUPER_ADMIN, use their college
     if (!options.collegeId && session.user.role !== 'SUPER_ADMIN') {
-      options.collegeId = session.user.collegeId;
+      options.collegeId = session.user.collegeId || undefined;
     }
 
     const bulkService = new BulkOperationsService(prisma);
     const result = await bulkService.exportUsers(options, session.user.id);
 
-    return new Response(result.data, {
+    // Return the export result
+    return new Response(result.data as any, {
       headers: {
         'Content-Type': result.mimeType,
         'Content-Disposition': `attachment; filename="${result.filename}"`,
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }

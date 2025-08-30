@@ -1,9 +1,20 @@
 /**
  * Exam-Specific Security Measures
- * 
+ *
  * This module provides comprehensive exam security features including
- * browser lock detection, tab switching prevention, and full-screen enforcement.
+ * browser lock detection, tab switching prevention, full-screen enforcement,
+ * advanced anti-cheating measures, screen recording detection, network monitoring,
+ * and AI-powered behavior analysis for anomaly detection.
  */
+
+import { behaviorAnalysisEngine, BehaviorModelConfig } from './behavior-analysis';
+import { violationIntegrationService } from './violation-integration';
+import { emergencyOrchestrator } from './emergency-orchestrator';
+import { auditLogger } from './audit-logger';
+import { browserCompatibilityManager } from './browser-compatibility';
+import { performanceMonitor } from './performance-monitor';
+import { adaptiveRenderingManager } from './adaptive-rendering';
+import { deviceCapabilityDetector } from './device-capability';
 
 export interface ExamSecurityConfig {
   examId: string;
@@ -22,6 +33,25 @@ export interface ExamSecurityConfig {
   maxWindowBlurs: number;
   screenshotInterval: number; // in seconds
   heartbeatInterval: number; // in seconds
+  // Advanced security features
+  enableScreenRecordingDetection: boolean;
+  enableNetworkMonitoring: boolean;
+  enableAdvancedClipboardMonitoring: boolean;
+  enableSecureCommunication: boolean;
+  enableAdvancedAntiDebugging: boolean;
+  maxClipboardOperations: number;
+  maxNetworkRequests: number;
+  allowedDomains: string[];
+  // AI-Powered Behavior Analysis
+  enableBehaviorAnalysis: boolean;
+  enableMouseTracking: boolean;
+  enableKeystrokeAnalysis: boolean;
+  enableGazeTracking: boolean;
+  enableTimeBasedAnalysis: boolean;
+  behaviorAnalysisInterval: number; // in seconds
+  anomalyThreshold: number; // 0-100
+  enablePatternRecognition: boolean;
+  maxCoordinatedAttempts: number;
 }
 
 export interface ExamSecurityEvent {
@@ -29,7 +59,7 @@ export interface ExamSecurityEvent {
   examId: string;
   userId: string;
   sessionId: string;
-  eventType: 'tab_switch' | 'window_blur' | 'fullscreen_exit' | 'copy_paste' | 'right_click' | 'dev_tools' | 'screenshot' | 'heartbeat' | 'violation';
+  eventType: 'tab_switch' | 'window_blur' | 'fullscreen_exit' | 'copy_paste' | 'right_click' | 'dev_tools' | 'screenshot' | 'heartbeat' | 'violation' | 'screen_recording' | 'network_violation' | 'clipboard_operation' | 'debug_attempt' | 'secure_comm_breach' | 'mouse_anomaly' | 'keystroke_anomaly' | 'gaze_anomaly' | 'time_pattern_anomaly' | 'behavior_anomaly' | 'coordinated_cheating';
   timestamp: number;
   severity: 'low' | 'medium' | 'high' | 'critical';
   details: Record<string, any>;
@@ -51,6 +81,24 @@ export interface ExamSecurityStatus {
   warnings: string[];
   canContinue: boolean;
   timeRemaining: number; // in seconds
+  // Advanced security metrics
+  clipboardOperations: number;
+  networkRequests: number;
+  screenRecordingDetected: boolean;
+  vpnDetected: boolean;
+  proxyDetected: boolean;
+  debugAttempts: number;
+  secureCommBreaches: number;
+  lastAdvancedCheck: number;
+  // Behavior Analysis Metrics
+  mouseAnomalies: number;
+  keystrokeAnomalies: number;
+  gazeAnomalies: number;
+  timePatternAnomalies: number;
+  behaviorScore: number; // 0-100, separate from security score
+  coordinatedCheatingAttempts: number;
+  lastBehaviorAnalysis: number;
+  attentionScore: number; // 0-100, based on gaze and mouse activity
 }
 
 class ExamSecurityService {
@@ -59,7 +107,18 @@ class ExamSecurityService {
   private examEvents: Map<string, ExamSecurityEvent[]> = new Map();
   private securityStatus: Map<string, ExamSecurityStatus> = new Map();
   private heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private emergencyInitialized = false;
   private screenshotIntervals: Map<string, NodeJS.Timeout> = new Map();
+  // Advanced security features
+  private advancedSecurityIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private networkMonitoringIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private clipboardMonitoringIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private debugDetectionIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private encryptionKeys: Map<string, CryptoKey> = new Map();
+  private knownRecordingProcesses: Set<string> = new Set([
+    'obs64.exe', 'obs32.exe', 'bandicam.exe', 'camtasia.exe', 'snagit.exe',
+    'screenrecorder.exe', 'apowersoft.exe', 'screenpresso.exe', 'sharex.exe'
+  ]);
 
   static getInstance(): ExamSecurityService {
     if (!ExamSecurityService.instance) {
@@ -92,6 +151,24 @@ class ExamSecurityService {
       warnings: [],
       canContinue: true,
       timeRemaining: config.duration * 60,
+      // Advanced security metrics
+      clipboardOperations: 0,
+      networkRequests: 0,
+      screenRecordingDetected: false,
+      vpnDetected: false,
+      proxyDetected: false,
+      debugAttempts: 0,
+      secureCommBreaches: 0,
+      lastAdvancedCheck: Date.now(),
+      // Behavior Analysis Metrics
+      mouseAnomalies: 0,
+      keystrokeAnomalies: 0,
+      gazeAnomalies: 0,
+      timePatternAnomalies: 0,
+      behaviorScore: 100,
+      coordinatedCheatingAttempts: 0,
+      lastBehaviorAnalysis: Date.now(),
+      attentionScore: 100,
     });
 
     // Initialize events array
@@ -105,8 +182,190 @@ class ExamSecurityService {
       this.startScreenshotMonitoring(examKey, config.screenshotInterval);
     }
 
+    // Start advanced security monitoring if enabled
+    if (config.enableScreenRecordingDetection || config.enableNetworkMonitoring ||
+        config.enableAdvancedClipboardMonitoring || config.enableAdvancedAntiDebugging) {
+      this.startAdvancedSecurityMonitoring(examKey, config);
+    }
+
+    // Initialize behavior analysis if enabled
+    if (config.enableBehaviorAnalysis) {
+      this.initializeBehaviorAnalysis(examKey, config);
+    }
+
+    // Initialize secure communication if enabled
+    if (config.enableSecureCommunication) {
+      this.initializeSecureCommunication(examKey);
+    }
+
     // Set up event listeners
     this.setupEventListeners(examKey, config);
+
+    // Initialize emergency response system
+    this.initializeEmergencyResponse(config);
+
+    // Initialize cross-platform compatibility and performance optimization
+    this.initializeCrossPlatformCompatibility(config);
+  }
+
+  /**
+   * Initialize cross-platform compatibility and performance optimization
+   */
+  private async initializeCrossPlatformCompatibility(config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Initialize browser compatibility manager
+      await browserCompatibilityManager.initialize();
+
+      // Check if browser is compatible
+      if (!browserCompatibilityManager.isCompatible()) {
+        const warnings = browserCompatibilityManager.getCompatibilityWarnings();
+        console.warn('Browser compatibility issues detected:', warnings);
+
+        auditLogger.logExamSecurity('copy_paste', {
+          examId: config.examId,
+          userId: config.userId,
+          sessionId: config.sessionId,
+          severity: 'medium',
+          description: 'Browser compatibility issues detected',
+          metadata: {
+            warnings,
+            compatibilityScore: browserCompatibilityManager.getCompatibilityScore(),
+            browserInfo: browserCompatibilityManager.getBrowserInfo()
+          }
+        });
+      }
+
+      // Initialize device capability detector
+      await deviceCapabilityDetector.initialize();
+
+      // Initialize performance monitor
+      await performanceMonitor.initialize();
+
+      // Initialize adaptive rendering manager
+      await adaptiveRenderingManager.initialize();
+
+      // Apply device-specific optimizations
+      await this.applyDeviceOptimizations(config);
+
+      auditLogger.logExamSecurity('exam_started', {
+        examId: config.examId,
+        userId: config.userId,
+        sessionId: config.sessionId,
+        severity: 'low',
+        description: 'Cross-platform compatibility initialized',
+        metadata: {
+          deviceCategory: deviceCapabilityDetector.getDeviceCategory(),
+          performanceScore: deviceCapabilityDetector.getCapabilityScore(),
+          renderingProfile: adaptiveRenderingManager.getCurrentProfile().name
+        }
+      });
+    } catch (error) {
+      console.error('Failed to initialize cross-platform compatibility:', error);
+      auditLogger.logExamSecurity('copy_paste', {
+        examId: config.examId,
+        userId: config.userId,
+        sessionId: config.sessionId,
+        severity: 'high',
+        description: 'Cross-platform compatibility initialization failed',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error)
+        }
+      });
+    }
+  }
+
+  /**
+   * Apply device-specific optimizations
+   */
+  private async applyDeviceOptimizations(config: ExamSecurityConfig): Promise<void> {
+    const deviceCapabilities = deviceCapabilityDetector.getHardwareCapabilities();
+    const performanceProfile = deviceCapabilityDetector.getPerformanceProfile();
+    const recommendedSettings = deviceCapabilityDetector.getRecommendedSettings();
+    const browserInfo = browserCompatibilityManager.getBrowserInfo();
+
+    // Adjust security settings based on device capabilities
+    if (performanceProfile.category === 'low-end') {
+      // Reduce resource-intensive security features
+      config.enableBehaviorAnalysis = false;
+      config.enableNetworkMonitoring = false;
+      console.log('Reduced security features for low-end device');
+    }
+
+    if (browserInfo.touchSupport) {
+      // Enable touch-specific security measures
+      config.enableAdvancedClipboardMonitoring = false; // May not work well on touch devices
+      console.log('Applied touch-device optimizations');
+    }
+
+    // Adjust monitoring intervals based on performance
+    if (performanceProfile.category === 'high-end') {
+      // More frequent monitoring for powerful devices
+      console.log('High-frequency monitoring enabled');
+    } else {
+      // Less frequent monitoring for lower-end devices
+      console.log('Conservative monitoring enabled');
+    }
+
+    // Apply rendering optimizations
+    const renderingRecommendations = adaptiveRenderingManager.getPerformanceRecommendations();
+    if (renderingRecommendations.suggestedProfile) {
+      await adaptiveRenderingManager.setProfile(renderingRecommendations.suggestedProfile);
+    }
+  }
+
+  /**
+   * Initialize emergency response system for the exam session
+   */
+  private async initializeEmergencyResponse(config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Initialize emergency orchestrator if not already done
+      if (!this.emergencyInitialized) {
+        await emergencyOrchestrator.initialize();
+        this.emergencyInitialized = true;
+      }
+
+      // Start session monitoring with emergency system
+      await emergencyOrchestrator.startSessionMonitoring(
+        config.examId,
+        config.userId,
+        config.sessionId,
+        {
+          config,
+          startTime: Date.now(),
+          securitySettings: {
+            enableNetworkMonitoring: config.enableNetworkMonitoring,
+            enableScreenRecordingDetection: config.enableScreenRecordingDetection,
+            enableBehaviorAnalysis: config.enableBehaviorAnalysis
+          }
+        }
+      );
+
+      auditLogger.logExamSecurity('exam_started', {
+        examId: config.examId,
+        userId: config.userId,
+        sessionId: config.sessionId,
+        severity: 'low',
+        description: 'Emergency response system initialized for exam session',
+        metadata: {
+          networkMonitoring: config.enableNetworkMonitoring,
+          screenRecordingDetection: config.enableScreenRecordingDetection,
+          behaviorAnalysis: config.enableBehaviorAnalysis
+        }
+      });
+    } catch (error) {
+      console.error('Failed to initialize emergency response:', error);
+
+      auditLogger.logExamSecurity('copy_paste', {
+        examId: config.examId,
+        userId: config.userId,
+        sessionId: config.sessionId,
+        severity: 'high',
+        description: 'Emergency response initialization failed',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error)
+        }
+      });
+    }
   }
 
   /**
@@ -132,8 +391,113 @@ class ExamSecurityService {
       this.screenshotIntervals.delete(examKey);
     }
 
+    // Clear advanced security intervals
+    const advancedInterval = this.advancedSecurityIntervals.get(examKey);
+    if (advancedInterval) {
+      clearInterval(advancedInterval);
+      this.advancedSecurityIntervals.delete(examKey);
+    }
+
+    const networkInterval = this.networkMonitoringIntervals.get(examKey);
+    if (networkInterval) {
+      clearInterval(networkInterval);
+      this.networkMonitoringIntervals.delete(examKey);
+    }
+
+    const clipboardInterval = this.clipboardMonitoringIntervals.get(examKey);
+    if (clipboardInterval) {
+      clearInterval(clipboardInterval);
+      this.clipboardMonitoringIntervals.delete(examKey);
+    }
+
+    const debugInterval = this.debugDetectionIntervals.get(examKey);
+    if (debugInterval) {
+      clearInterval(debugInterval);
+      this.debugDetectionIntervals.delete(examKey);
+    }
+
+    // Remove encryption key
+    this.encryptionKeys.delete(examKey);
+
+    // Clean up behavior analysis
+    this.cleanupBehaviorAnalysis(examKey);
+
     // Remove event listeners
     this.removeEventListeners(examKey);
+
+    // Stop emergency monitoring
+    this.stopEmergencyMonitoring(examId, userId, sessionId);
+
+    // Clean up cross-platform compatibility components
+    this.cleanupCrossPlatformCompatibility(examId, userId, sessionId);
+  }
+
+  /**
+   * Clean up cross-platform compatibility components
+   */
+  private cleanupCrossPlatformCompatibility(examId: string, userId: string, sessionId: string): void {
+    try {
+      // Clean up performance monitor
+      performanceMonitor.destroy();
+
+      // Clean up adaptive rendering manager
+      adaptiveRenderingManager.destroy();
+
+      // Clean up device capability detector
+      deviceCapabilityDetector.destroy();
+
+      auditLogger.logExamSecurity('exam_completed', {
+        examId,
+        userId,
+        sessionId,
+        severity: 'low',
+        description: 'Cross-platform compatibility components cleaned up',
+        metadata: {}
+      });
+    } catch (error) {
+      console.error('Failed to cleanup cross-platform compatibility:', error);
+      auditLogger.logExamSecurity('copy_paste', {
+        examId,
+        userId,
+        sessionId,
+        severity: 'medium',
+        description: 'Cross-platform compatibility cleanup failed',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error)
+        }
+      });
+    }
+  }
+
+  /**
+   * Stop emergency monitoring for the exam session
+   */
+  private async stopEmergencyMonitoring(examId: string, userId: string, sessionId: string): Promise<void> {
+    try {
+      await emergencyOrchestrator.stopSessionMonitoring(examId, userId, sessionId);
+
+      auditLogger.logExamSecurity('exam_completed', {
+        examId,
+        userId,
+        sessionId,
+        severity: 'low',
+        description: 'Emergency monitoring stopped for exam session',
+        metadata: {}
+      });
+    } catch (error) {
+      console.error('Failed to stop emergency monitoring:', error);
+
+      auditLogger.logExamSecurity('copy_paste', {
+        examId,
+        userId,
+        sessionId,
+        severity: 'medium',
+        description: 'Emergency monitoring cleanup failed',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error)
+        }
+      });
+    }
   }
 
   /**
@@ -164,6 +528,11 @@ class ExamSecurityService {
 
     // Take action based on event severity
     this.handleSecurityEvent(securityEvent, examConfig, status);
+
+    // Integrate with violation reporting system (async, don't block main flow)
+    violationIntegrationService.processViolation(securityEvent, examConfig).catch(error => {
+      console.error('Error in violation integration:', error);
+    });
   }
 
   /**
@@ -477,6 +846,77 @@ class ExamSecurityService {
         status.warnings.push(`Security violation: ${event.eventType}`);
         break;
 
+      case 'screen_recording':
+        status.screenRecordingDetected = true;
+        status.violations++;
+        status.warnings.push('Screen recording software detected');
+        break;
+
+      case 'network_violation':
+        if (event.details.vpnDetected) status.vpnDetected = true;
+        if (event.details.proxyDetected) status.proxyDetected = true;
+        status.networkRequests++;
+        if (status.networkRequests > config.maxNetworkRequests) {
+          status.violations++;
+          status.warnings.push('Excessive network activity detected');
+        }
+        break;
+
+      case 'clipboard_operation':
+        status.clipboardOperations++;
+        if (status.clipboardOperations > config.maxClipboardOperations) {
+          status.violations++;
+          status.warnings.push('Excessive clipboard operations detected');
+        }
+        break;
+
+      case 'debug_attempt':
+        status.debugAttempts++;
+        status.violations++;
+        status.warnings.push('Developer tools access attempt detected');
+        break;
+
+      case 'secure_comm_breach':
+        status.secureCommBreaches++;
+        status.violations++;
+        status.warnings.push('Secure communication breach detected');
+        break;
+
+      case 'mouse_anomaly':
+        status.mouseAnomalies++;
+        status.violations++;
+        status.warnings.push('Mouse movement anomaly detected');
+        break;
+
+      case 'keystroke_anomaly':
+        status.keystrokeAnomalies++;
+        status.violations++;
+        status.warnings.push('Keystroke pattern anomaly detected');
+        break;
+
+      case 'gaze_anomaly':
+        status.gazeAnomalies++;
+        status.violations++;
+        status.warnings.push('Gaze tracking anomaly detected');
+        break;
+
+      case 'time_pattern_anomaly':
+        status.timePatternAnomalies++;
+        status.violations++;
+        status.warnings.push('Time pattern anomaly detected');
+        break;
+
+      case 'behavior_anomaly':
+        status.violations++;
+        status.warnings.push('General behavior anomaly detected');
+        break;
+
+      case 'coordinated_cheating':
+        status.coordinatedCheatingAttempts++;
+        status.violations += 2; // Higher penalty for coordinated cheating
+        status.warnings.push('Coordinated cheating attempt detected');
+        break;
+
       case 'heartbeat':
         status.lastHeartbeat = event.timestamp;
         break;
@@ -694,6 +1134,44 @@ class ExamSecurityService {
       score -= 20;
     }
 
+    // Deduct points for behavior analysis anomalies
+    if (config.enableBehaviorAnalysis) {
+      // Mouse anomalies
+      if (status.mouseAnomalies > 0) {
+        score -= Math.min(15, status.mouseAnomalies * 5);
+      }
+
+      // Keystroke anomalies
+      if (status.keystrokeAnomalies > 0) {
+        score -= Math.min(15, status.keystrokeAnomalies * 5);
+      }
+
+      // Gaze anomalies
+      if (status.gazeAnomalies > 0) {
+        score -= Math.min(20, status.gazeAnomalies * 7);
+      }
+
+      // Time pattern anomalies
+      if (status.timePatternAnomalies > 0) {
+        score -= Math.min(15, status.timePatternAnomalies * 5);
+      }
+
+      // Coordinated cheating attempts (higher penalty)
+      if (status.coordinatedCheatingAttempts > 0) {
+        score -= Math.min(30, status.coordinatedCheatingAttempts * 15);
+      }
+
+      // Deduct points based on behavior score
+      if (status.behaviorScore < 80) {
+        score -= (100 - status.behaviorScore) * 0.5;
+      }
+
+      // Deduct points based on attention score
+      if (status.attentionScore < 70) {
+        score -= (100 - status.attentionScore) * 0.3;
+      }
+    }
+
     return Math.max(0, score);
   }
 
@@ -784,6 +1262,998 @@ class ExamSecurityService {
       } else {
         this.examEvents.set(key, filteredEvents);
       }
+    }
+  }
+
+  /**
+   * Start advanced security monitoring
+   */
+  private startAdvancedSecurityMonitoring(examKey: string, config: ExamSecurityConfig): void {
+    const interval = setInterval(async () => {
+      const status = this.securityStatus.get(examKey);
+      if (!status || !status.isActive) {
+        clearInterval(interval);
+        return;
+      }
+
+      try {
+        // Screen recording detection
+        if (config.enableScreenRecordingDetection) {
+          await this.detectScreenRecording(examKey, config);
+        }
+
+        // Network monitoring
+        if (config.enableNetworkMonitoring) {
+          await this.monitorNetworkActivity(examKey, config);
+        }
+
+        // Advanced clipboard monitoring
+        if (config.enableAdvancedClipboardMonitoring) {
+          await this.monitorAdvancedClipboard(examKey, config);
+        }
+
+        // Advanced anti-debugging
+        if (config.enableAdvancedAntiDebugging) {
+          await this.detectAdvancedDebugging(examKey, config);
+        }
+
+        status.lastAdvancedCheck = Date.now();
+      } catch (error) {
+        console.error('Advanced security monitoring error:', error);
+      }
+    }, 30000); // Check every 30 seconds
+
+    this.advancedSecurityIntervals.set(examKey, interval);
+  }
+
+  /**
+   * Detect screen recording software
+   */
+  private async detectScreenRecording(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Check MediaDevices API for screen sharing
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const screenDevices = devices.filter(device =>
+          device.kind === 'audiooutput' || device.kind === 'videoinput'
+        );
+
+        // Check for unusual device configurations
+        if (screenDevices.length > 2) {
+          this.recordEvent({
+            examId: config.examId,
+            userId: config.userId,
+            sessionId: config.sessionId,
+            eventType: 'screen_recording',
+            severity: 'high',
+            details: {
+              deviceCount: screenDevices.length,
+              devices: screenDevices.map(d => ({ kind: d.kind, label: d.label })),
+              reason: 'multiple_media_devices'
+            },
+            action: 'warn',
+          });
+        }
+      }
+
+      // Check for known recording processes (limited browser capabilities)
+      // This is mainly for detection through performance patterns
+      const performance = window.performance;
+      if (performance && 'memory' in performance) {
+        const memoryInfo = (performance as any).memory;
+        if (memoryInfo && memoryInfo.usedJSHeapSize && memoryInfo.totalJSHeapSize) {
+          const memoryUsage = memoryInfo.usedJSHeapSize / memoryInfo.totalJSHeapSize;
+          if (memoryUsage > 0.8) {
+            this.recordEvent({
+              examId: config.examId,
+              userId: config.userId,
+              sessionId: config.sessionId,
+              eventType: 'screen_recording',
+              severity: 'medium',
+              details: {
+                memoryUsage,
+                reason: 'high_memory_usage'
+              },
+              action: 'log',
+            });
+          }
+        }
+      }
+
+      // Check GPU usage patterns
+      if ('webkitRequestAnimationFrame' in window || 'mozRequestAnimationFrame' in window) {
+        // Monitor for high-frequency animation frames that might indicate recording
+        let frameCount = 0;
+        let startTime = Date.now();
+
+        const checkFrameRate = () => {
+          frameCount++;
+          if (Date.now() - startTime >= 5000) { // Check over 5 seconds
+            const fps = frameCount / 5;
+            if (fps > 60) { // Unusually high frame rate
+              this.recordEvent({
+                examId: config.examId,
+                userId: config.userId,
+                sessionId: config.sessionId,
+                eventType: 'screen_recording',
+                severity: 'medium',
+                details: {
+                  fps,
+                  reason: 'high_frame_rate'
+                },
+                action: 'log',
+              });
+            }
+            frameCount = 0;
+            startTime = Date.now();
+          }
+          requestAnimationFrame(checkFrameRate);
+        };
+
+        // Only run for a short period to avoid performance impact
+        setTimeout(() => checkFrameRate(), 1000);
+      }
+
+    } catch (error) {
+      console.error('Screen recording detection error:', error);
+    }
+  }
+
+  /**
+   * Monitor network activity
+   */
+  private async monitorNetworkActivity(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Check for VPN/Proxy indicators
+      const isVpnDetected = await this.detectVPN();
+      const isProxyDetected = await this.detectProxy();
+
+      if (isVpnDetected || isProxyDetected) {
+        this.recordEvent({
+          examId: config.examId,
+          userId: config.userId,
+          sessionId: config.sessionId,
+          eventType: 'network_violation',
+          severity: isVpnDetected ? 'high' : 'medium',
+          details: {
+            vpnDetected: isVpnDetected,
+            proxyDetected: isProxyDetected,
+            timestamp: Date.now()
+          },
+          action: isVpnDetected ? 'warn' : 'log',
+        });
+      }
+
+      // Monitor unauthorized external requests
+      if (config.allowedDomains && config.allowedDomains.length > 0) {
+        // This would require intercepting network requests
+        // In a real implementation, you'd use Service Worker or monkey-patch XMLHttpRequest/Fetch
+        this.monitorExternalRequests(examKey, config);
+      }
+
+    } catch (error) {
+      console.error('Network monitoring error:', error);
+    }
+  }
+
+  /**
+   * Detect VPN usage
+   */
+  private async detectVPN(): Promise<boolean> {
+    try {
+      // Check WebRTC IP leakage
+      if (window.RTCPeerConnection) {
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        pc.createDataChannel('');
+        pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+        return new Promise((resolve) => {
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              const candidate = event.candidate.candidate;
+              // Check for VPN-like IP patterns
+              if (candidate.includes('10.') || candidate.includes('172.') || candidate.includes('192.168.')) {
+                resolve(false); // Private IP, likely not VPN
+              } else {
+                // Public IP, could be VPN
+                pc.close();
+                resolve(true);
+              }
+            }
+          };
+
+          setTimeout(() => {
+            pc.close();
+            resolve(false);
+          }, 5000);
+        });
+      }
+    } catch (error) {
+      console.error('VPN detection error:', error);
+    }
+    return false;
+  }
+
+  /**
+   * Detect proxy usage
+   */
+  private async detectProxy(): Promise<boolean> {
+    try {
+      // Check for proxy headers via timing analysis
+      const startTime = Date.now();
+      const response = await fetch('/api/health', { method: 'HEAD' });
+      const responseTime = Date.now() - startTime;
+
+      // Unusual response times might indicate proxy usage
+      if (responseTime > 5000) {
+        return true;
+      }
+
+      // Check for common proxy headers
+      const proxyHeaders = [
+        'via', 'proxy-connection', 'proxy-authenticate',
+        'x-forwarded-for', 'x-real-ip', 'x-proxy-id'
+      ];
+
+      for (const header of proxyHeaders) {
+        if (response.headers.get(header)) {
+          return true;
+        }
+      }
+
+    } catch (error) {
+      console.error('Proxy detection error:', error);
+    }
+    return false;
+  }
+
+  /**
+   * Monitor external requests
+   */
+  private monitorExternalRequests(examKey: string, config: ExamSecurityConfig): void {
+    // Store original methods
+    const originalXMLHttpRequest = window.XMLHttpRequest;
+    const originalFetch = window.fetch;
+    const self = this;
+
+    // Create a wrapper constructor for XMLHttpRequest
+    const XMLHttpRequestProxy = function(this: XMLHttpRequest) {
+      const xhr = new originalXMLHttpRequest();
+      const originalOpen = xhr.open;
+
+      xhr.open = function(method: string, url: string | URL) {
+        const urlString = typeof url === 'string' ? url : url.href;
+
+        // Check if request is to allowed domain
+        const isAllowed = config.allowedDomains?.some(domain =>
+          urlString.includes(domain)
+        );
+
+        if (!isAllowed && !urlString.startsWith(window.location.origin)) {
+          self.recordEvent({
+            examId: config.examId,
+            userId: config.userId,
+            sessionId: config.sessionId,
+            eventType: 'network_violation',
+            severity: 'high',
+            details: {
+              url: urlString,
+              method,
+              reason: 'unauthorized_external_request'
+            },
+            action: 'block',
+          });
+        }
+
+        return originalOpen.apply(this, [method, url] as any);
+      };
+
+      // Copy all properties from xhr to this
+      Object.setPrototypeOf(this, XMLHttpRequestProxy.prototype);
+      Object.assign(this, xhr);
+
+      return this;
+    } as any;
+
+    // Set up inheritance
+    XMLHttpRequestProxy.prototype = originalXMLHttpRequest.prototype;
+
+    // Replace XMLHttpRequest
+    (window as any).XMLHttpRequest = XMLHttpRequestProxy;
+
+    // Monkey-patch fetch
+    window.fetch = function(input: RequestInfo | URL, init?: RequestInit) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+      const isAllowed = config.allowedDomains?.some(domain =>
+        url.includes(domain)
+      );
+
+      if (!isAllowed && !url.startsWith(window.location.origin)) {
+        self.recordEvent({
+          examId: config.examId,
+          userId: config.userId,
+          sessionId: config.sessionId,
+          eventType: 'network_violation',
+          severity: 'high',
+          details: {
+            url,
+            method: init?.method || 'GET',
+            reason: 'unauthorized_external_request'
+          },
+          action: 'block',
+        });
+      }
+
+      return originalFetch(input, init);
+    };
+  }
+
+  /**
+   * Monitor advanced clipboard operations
+   */
+  private async monitorAdvancedClipboard(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Enhanced clipboard monitoring with timing analysis
+      if (navigator.clipboard) {
+        const clipboardData = await navigator.clipboard.readText().catch(() => '');
+
+        if (clipboardData && clipboardData.length > 0) {
+          this.recordEvent({
+            examId: config.examId,
+            userId: config.userId,
+            sessionId: config.sessionId,
+            eventType: 'clipboard_operation',
+            severity: 'low',
+            details: {
+              dataLength: clipboardData.length,
+              hasSuspectContent: this.isSuspectClipboardContent(clipboardData),
+              timestamp: Date.now()
+            },
+            action: 'log',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Advanced clipboard monitoring error:', error);
+    }
+  }
+
+  /**
+   * Check if clipboard content is suspicious
+   */
+  private isSuspectClipboardContent(content: string): boolean {
+    // Check for exam-related keywords or code patterns
+    const suspectPatterns = [
+      /answer/i,
+      /solution/i,
+      /function/i,
+      /class/i,
+      /import/i,
+      /export/i,
+      /\b\d+\.\s/, // Numbered lists
+      /question/i
+    ];
+
+    return suspectPatterns.some(pattern => pattern.test(content));
+  }
+
+  /**
+   * Detect advanced debugging attempts
+   */
+  private async detectAdvancedDebugging(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    try {
+      // Multiple detection methods for developer tools
+      const detectionMethods = [
+        this.detectDevToolsViaConsole(),
+        this.detectDevToolsViaPerformance(),
+        this.detectDevToolsViaMemory(),
+        this.detectDevToolsViaTiming()
+      ];
+
+      const results = await Promise.all(detectionMethods);
+      const detected = results.some(result => result);
+
+      if (detected) {
+        this.recordEvent({
+          examId: config.examId,
+          userId: config.userId,
+          sessionId: config.sessionId,
+          eventType: 'debug_attempt',
+          severity: 'high',
+          details: {
+            detectionMethods: results,
+            timestamp: Date.now()
+          },
+          action: 'warn',
+        });
+      }
+    } catch (error) {
+      console.error('Advanced debugging detection error:', error);
+    }
+  }
+
+  /**
+   * Detect dev tools via console manipulation
+   */
+  private detectDevToolsViaConsole(): boolean {
+    try {
+      const consoleMethods = ['log', 'warn', 'error', 'info', 'debug'];
+      let modified = false;
+
+      consoleMethods.forEach(method => {
+        const original = (console as any)[method];
+        (console as any)[method] = (...args: any[]) => {
+          modified = true;
+          return original.apply(console, args);
+        };
+      });
+
+      // Restore after a short delay
+      setTimeout(() => {
+        consoleMethods.forEach(method => {
+          (console as any)[method] = (console as any)[`__${method}`] || (console as any)[method];
+        });
+      }, 100);
+
+      return modified;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Detect dev tools via performance monitoring
+   */
+  private detectDevToolsViaPerformance(): boolean {
+    try {
+      const start = performance.now();
+      debugger; // This will be skipped if dev tools are open
+      const end = performance.now();
+
+      // If dev tools are open, debugger statement takes longer
+      return (end - start) > 100;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Detect dev tools via memory inspection
+   */
+  private detectDevToolsViaMemory(): boolean {
+    try {
+      // Check for dev tools specific objects
+      return !!(
+        (window as any).chrome &&
+        (window as any).chrome.devtools &&
+        (window as any).chrome.devtools.inspectedWindow
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Detect dev tools via timing analysis
+   */
+  private detectDevToolsViaTiming(): boolean {
+    try {
+      const start = Date.now();
+      for (let i = 0; i < 10000; i++) {
+        // Empty loop to measure timing
+      }
+      const end = Date.now();
+
+      // Dev tools can slow down JavaScript execution
+      return (end - start) > 50;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Initialize secure communication
+   */
+  private async initializeSecureCommunication(examKey: string): Promise<void> {
+    try {
+      // Generate encryption key for secure communication
+      const key = await crypto.subtle.generateKey(
+        {
+          name: 'AES-GCM',
+          length: 256
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      this.encryptionKeys.set(examKey, key);
+
+      // Monkey-patch communication methods
+      this.secureFetchCommunication(examKey);
+      this.secureXMLHttpCommunication(examKey);
+
+    } catch (error) {
+      console.error('Secure communication initialization error:', error);
+    }
+  }
+
+  /**
+   * Initialize behavior analysis
+   */
+  private initializeBehaviorAnalysis(examKey: string, config: ExamSecurityConfig): void {
+    try {
+      const behaviorConfig: BehaviorModelConfig = {
+        mouseVelocityThreshold: 1000,
+        keystrokeIntervalThreshold: 50,
+        gazeAttentionThreshold: 0.6,
+        timePatternThreshold: 30000, // 30 seconds variance
+        anomalyScoreWeight: {
+          mouse: 0.25,
+          keystroke: 0.25,
+          gaze: 0.25,
+          time: 0.25
+        }
+      };
+
+      behaviorAnalysisEngine.initializeAnalysis(examKey, behaviorConfig);
+
+      // Start behavior analysis monitoring
+      if (config.behaviorAnalysisInterval > 0) {
+        this.startBehaviorAnalysisMonitoring(examKey, config.behaviorAnalysisInterval);
+      }
+
+      // Set up behavior tracking event listeners
+      this.setupBehaviorTrackingListeners(examKey, config);
+
+    } catch (error) {
+      console.error('Behavior analysis initialization error:', error);
+    }
+  }
+
+  /**
+   * Start behavior analysis monitoring
+   */
+  private startBehaviorAnalysisMonitoring(examKey: string, interval: number): void {
+    const behaviorInterval = setInterval(async () => {
+      const config = this.activeExams.get(examKey);
+      const status = this.securityStatus.get(examKey);
+
+      if (!config || !status || !status.isActive) {
+        clearInterval(behaviorInterval);
+        return;
+      }
+
+      try {
+        const analysisResult = await behaviorAnalysisEngine.analyzeBehavior(examKey);
+
+        // Update behavior analysis metrics
+        status.behaviorScore = Math.max(0, 100 - analysisResult.anomalyScore);
+        status.lastBehaviorAnalysis = analysisResult.timestamp;
+
+        // Calculate attention score based on gaze and mouse activity
+        status.attentionScore = this.calculateAttentionScore(analysisResult);
+
+        // Record behavior anomalies
+        if (analysisResult.anomalyScore > config.anomalyThreshold) {
+          this.handleBehaviorAnomaly(examKey, analysisResult, config, status);
+        }
+
+        // Check for coordinated cheating
+        if (analysisResult.detectedPatterns.some(p => p.includes('coordinated_cheating'))) {
+          status.coordinatedCheatingAttempts++;
+        }
+
+      } catch (error) {
+        console.error('Behavior analysis monitoring error:', error);
+      }
+    }, interval * 1000);
+
+    this.advancedSecurityIntervals.set(examKey + '_behavior', behaviorInterval);
+  }
+
+  /**
+   * Set up behavior tracking event listeners
+   */
+  private setupBehaviorTrackingListeners(examKey: string, config: ExamSecurityConfig): void {
+    if (typeof window === 'undefined') {
+      return; // Server-side, skip behavior tracking
+    }
+
+    const status = this.securityStatus.get(examKey);
+    if (!status) return;
+
+    // Mouse movement tracking
+    if (config.enableMouseTracking) {
+      let lastMouseTime = 0;
+      const handleMouseMove = (e: MouseEvent) => {
+        const now = Date.now();
+        if (now - lastMouseTime > 50) { // Throttle to 20fps
+          behaviorAnalysisEngine.recordMouseMovement(examKey, e.clientX, e.clientY);
+          lastMouseTime = now;
+        }
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+    }
+
+    // Keystroke tracking
+    if (config.enableKeystrokeAnalysis) {
+      let keyDownTime = 0;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        keyDownTime = Date.now();
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (keyDownTime > 0) {
+          const duration = Date.now() - keyDownTime;
+          behaviorAnalysisEngine.recordKeystroke(examKey, e.key, duration);
+          keyDownTime = 0;
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
+    }
+
+    // Gaze tracking simulation (in real implementation, would use webcam)
+    if (config.enableGazeTracking) {
+      this.initializeGazeTracking(examKey);
+    }
+  }
+
+  /**
+   * Initialize gaze tracking
+   */
+  private async initializeGazeTracking(examKey: string): Promise<void> {
+    try {
+      // In a real implementation, this would use WebRTC and computer vision
+      // For now, we'll simulate gaze tracking based on mouse position
+      let gazeInterval: NodeJS.Timeout;
+
+      const simulateGazeTracking = () => {
+        if (typeof window === 'undefined') return;
+
+        // Simulate gaze data based on mouse position and random factors
+        const mouseX = Math.random() * window.innerWidth;
+        const mouseY = Math.random() * window.innerHeight;
+        const confidence = 0.7 + Math.random() * 0.3; // 0.7-1.0
+        const pupilDilation = 0.3 + Math.random() * 0.4; // 0.3-0.7
+        const blinkRate = 15 + Math.random() * 10; // 15-25 blinks per minute
+
+        behaviorAnalysisEngine.recordGazeData(examKey, mouseX, mouseY, confidence, pupilDilation, blinkRate);
+      };
+
+      // Simulate gaze tracking every 100ms
+      gazeInterval = setInterval(simulateGazeTracking, 100);
+      this.debugDetectionIntervals.set(examKey + '_gaze', gazeInterval);
+
+    } catch (error) {
+      console.error('Gaze tracking initialization error:', error);
+    }
+  }
+
+  /**
+   * Handle behavior anomaly detection
+   */
+  private handleBehaviorAnomaly(
+    examKey: string,
+    analysisResult: any,
+    config: ExamSecurityConfig,
+    status: ExamSecurityStatus
+  ): void {
+    const anomalyType = analysisResult.detectedPatterns[0] || 'behavior_anomaly';
+
+    // Map anomaly patterns to event types
+    const eventTypeMap: Record<string, string> = {
+      'robotic_mouse_movements': 'mouse_anomaly',
+      'robotic_typing_pattern': 'keystroke_anomaly',
+      'low_attention_detected': 'gaze_anomaly',
+      'inconsistent_time_patterns': 'time_pattern_anomaly',
+      'coordinated_cheating_detected': 'coordinated_cheating'
+    };
+
+    const eventType = eventTypeMap[anomalyType] || 'behavior_anomaly';
+
+    // Update anomaly counters
+    switch (eventType) {
+      case 'mouse_anomaly':
+        status.mouseAnomalies++;
+        break;
+      case 'keystroke_anomaly':
+        status.keystrokeAnomalies++;
+        break;
+      case 'gaze_anomaly':
+        status.gazeAnomalies++;
+        break;
+      case 'time_pattern_anomaly':
+        status.timePatternAnomalies++;
+        break;
+    }
+
+    // Record the anomaly event
+    this.recordEvent({
+      examId: config.examId,
+      userId: config.userId,
+      sessionId: config.sessionId,
+      eventType: eventType as any,
+      severity: analysisResult.riskLevel === 'critical' ? 'critical' :
+               analysisResult.riskLevel === 'high' ? 'high' : 'medium',
+      details: {
+        anomalyScore: analysisResult.anomalyScore,
+        confidence: analysisResult.confidence,
+        detectedPatterns: analysisResult.detectedPatterns,
+        recommendations: analysisResult.recommendations,
+        timestamp: analysisResult.timestamp
+      },
+      action: analysisResult.riskLevel === 'critical' ? 'terminate' : 'warn'
+    });
+  }
+
+  /**
+   * Calculate attention score from behavior analysis
+   */
+  private calculateAttentionScore(analysisResult: any): number {
+    let attentionScore = 100;
+
+    // Reduce score based on detected patterns
+    if (analysisResult.detectedPatterns.includes('low_attention_detected')) {
+      attentionScore -= 30;
+    }
+
+    if (analysisResult.detectedPatterns.includes('unusual_gaze_fixation')) {
+      attentionScore -= 20;
+    }
+
+    if (analysisResult.detectedPatterns.includes('robotic_mouse_movements')) {
+      attentionScore -= 25;
+    }
+
+    // Reduce score based on anomaly score
+    attentionScore -= analysisResult.anomalyScore * 0.5;
+
+    return Math.max(0, attentionScore);
+  }
+
+  /**
+   * Record time pattern for question answering
+   */
+  recordQuestionTimePattern(
+    examId: string,
+    userId: string,
+    sessionId: string,
+    questionId: string,
+    startTime: number,
+    endTime: number,
+    answerLength: number,
+    hesitationCount: number,
+    revisionCount: number
+  ): void {
+    const examKey = `${examId}_${userId}_${sessionId}`;
+    const config = this.activeExams.get(examKey);
+
+    if (config?.enableBehaviorAnalysis && config.enableTimeBasedAnalysis) {
+      behaviorAnalysisEngine.recordTimePattern(
+        examKey,
+        questionId,
+        startTime,
+        endTime,
+        answerLength,
+        hesitationCount,
+        revisionCount
+      );
+    }
+  }
+
+  /**
+   * Get behavior analysis statistics
+   */
+  getBehaviorAnalysisStats(examId: string, userId: string, sessionId: string): any {
+    const examKey = `${examId}_${userId}_${sessionId}`;
+    return behaviorAnalysisEngine.getBehaviorStats(examKey);
+  }
+
+  /**
+   * Clean up behavior analysis for session
+   */
+  private cleanupBehaviorAnalysis(examKey: string): void {
+    try {
+      behaviorAnalysisEngine.cleanupSession(examKey);
+
+      // Clear behavior analysis intervals
+      const behaviorInterval = this.advancedSecurityIntervals.get(examKey + '_behavior');
+      if (behaviorInterval) {
+        clearInterval(behaviorInterval);
+        this.advancedSecurityIntervals.delete(examKey + '_behavior');
+      }
+
+      const gazeInterval = this.debugDetectionIntervals.get(examKey + '_gaze');
+      if (gazeInterval) {
+        clearInterval(gazeInterval);
+        this.debugDetectionIntervals.delete(examKey + '_gaze');
+      }
+
+    } catch (error) {
+      console.error('Behavior analysis cleanup error:', error);
+    }
+  }
+
+  /**
+   * Secure fetch communication
+   */
+  private secureFetchCommunication(examKey: string): void {
+    const originalFetch = window.fetch;
+    const encryptionKey = this.encryptionKeys.get(examKey);
+
+    if (!encryptionKey) return;
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      try {
+        // Encrypt request body if present
+        let encryptedInit = init;
+        if (init?.body && typeof init.body === 'string') {
+          const encoded = new TextEncoder().encode(init.body);
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+
+          const encrypted = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            encryptionKey,
+            encoded
+          );
+
+          // Create HMAC for integrity verification
+          const hmac = await this.createHMAC(encrypted, encryptionKey);
+
+          encryptedInit = {
+            ...init,
+            body: JSON.stringify({
+              encrypted: Array.from(new Uint8Array(encrypted)),
+              iv: Array.from(iv),
+              hmac: Array.from(new Uint8Array(hmac))
+            }),
+            headers: {
+              ...init.headers,
+              'X-Secure-Comm': 'true',
+              'Content-Type': 'application/json'
+            }
+          };
+        }
+
+        const response = await originalFetch(input, encryptedInit);
+
+        // Decrypt response if needed
+        if (response.headers.get('X-Secure-Comm') === 'true') {
+          const responseData = await response.json();
+          if (responseData.encrypted && responseData.iv && responseData.hmac) {
+            // Verify HMAC
+            const hmacValid = await this.verifyHMAC(
+              new Uint8Array(responseData.encrypted),
+              new Uint8Array(responseData.hmac),
+              encryptionKey
+            );
+
+            if (!hmacValid) {
+              throw new Error('HMAC verification failed');
+            }
+
+            // Decrypt response
+            const decrypted = await crypto.subtle.decrypt(
+              { name: 'AES-GCM', iv: new Uint8Array(responseData.iv) },
+              encryptionKey,
+              new Uint8Array(responseData.encrypted)
+            );
+
+            const decryptedText = new TextDecoder().decode(decrypted);
+            return new Response(decryptedText, response);
+          }
+        }
+
+        return response;
+
+      } catch (error) {
+        // Record secure communication breach
+        const config = this.activeExams.get(examKey);
+        if (config) {
+          this.recordEvent({
+            examId: config.examId,
+            userId: config.userId,
+            sessionId: config.sessionId,
+            eventType: 'secure_comm_breach',
+            severity: 'critical',
+            details: {
+              error: error instanceof Error ? error.message : String(error),
+              timestamp: Date.now()
+            },
+            action: 'terminate',
+          });
+        }
+        throw error;
+      }
+    };
+  }
+
+  /**
+   * Secure XMLHttpRequest communication
+   */
+  private secureXMLHttpCommunication(examKey: string): void {
+    const originalXMLHttpRequest = window.XMLHttpRequest;
+    const encryptionKey = this.encryptionKeys.get(examKey);
+
+    if (!encryptionKey) return;
+
+    // Create a wrapper constructor for XMLHttpRequest
+    const SecureXMLHttpRequest = function(this: XMLHttpRequest) {
+      const xhr = new originalXMLHttpRequest();
+      const originalSend = xhr.send;
+      const originalOpen = xhr.open;
+
+      xhr.open = function(method: string, url: string | URL) {
+        // Add secure communication header
+        xhr.setRequestHeader('X-Secure-Comm', 'true');
+        return originalOpen.apply(this, [method, url] as any);
+      };
+
+      xhr.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
+        if (body && typeof body === 'string') {
+          // Encrypt and send
+          crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) },
+            encryptionKey,
+            new TextEncoder().encode(body)
+          ).then(encrypted => {
+            originalSend.call(this, JSON.stringify({
+              encrypted: Array.from(new Uint8Array(encrypted))
+            }));
+          });
+        } else {
+          originalSend.call(this, body);
+        }
+      };
+
+      // Copy all properties from xhr to this
+      Object.setPrototypeOf(this, SecureXMLHttpRequest.prototype);
+      Object.assign(this, xhr);
+
+      return this;
+    } as any;
+
+    // Set up inheritance
+    SecureXMLHttpRequest.prototype = originalXMLHttpRequest.prototype;
+
+    // Replace XMLHttpRequest
+    (window as any).XMLHttpRequest = SecureXMLHttpRequest;
+  }
+
+  /**
+   * Create HMAC for integrity verification
+   */
+  private async createHMAC(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
+    const hmacKey = await crypto.subtle.importKey(
+      'raw',
+      crypto.getRandomValues(new Uint8Array(32)),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    return crypto.subtle.sign('HMAC', hmacKey, data);
+  }
+
+  /**
+   * Verify HMAC integrity
+   */
+  private async verifyHMAC(data: Uint8Array, hmac: Uint8Array, key: CryptoKey): Promise<boolean> {
+    try {
+      // Use the provided key parameter for verification
+      const dataView = new Uint8Array(data.buffer as ArrayBuffer, data.byteOffset, data.byteLength);
+      const hmacView = new Uint8Array(hmac.buffer as ArrayBuffer, hmac.byteOffset, hmac.byteLength);
+      return crypto.subtle.verify('HMAC', key, hmacView, dataView);
+    } catch (error) {
+      return false;
     }
   }
 }

@@ -1,17 +1,18 @@
-import { PrismaClient, User, UserRole, College } from '@prisma/client';
+import { PrismaClient, Prisma, College } from '@prisma/client';
+import { AppRole } from '@/types/auth';
 import { AuditLogger } from '@/lib/security/audit-logger';
 
 // Define a clean interface that matches the actual Prisma schema
 export interface UserProfile {
   // Core User fields (matching Prisma schema exactly)
   id: string;
-  name: string;
+  name: string | null;
   firstName: string | null;
   lastName: string | null;
   email: string;
   rollNo: string | null;
   password: string;
-  role: UserRole;
+  role: AppRole;
   isActive: boolean;
   collegeId: string | null;
   department: string | null;
@@ -39,7 +40,7 @@ export interface UserProfile {
     year?: number;
     major?: string;
     gpa?: number;
-    expectedGraduation?: Date;
+    expectedGraduation?: Date | null;
   };
   collegeAdminFields?: {
     permissions?: string[];
@@ -80,7 +81,7 @@ export interface ProfileUpdateData {
     year?: number;
     major?: string;
     gpa?: number;
-    expectedGraduation?: Date;
+    expectedGraduation?: Date | null;
   };
   collegeAdminFields?: {
     permissions?: string[];
@@ -119,7 +120,7 @@ export class ProfileService {
     }
 
     // Add role-specific fields based on user role
-    const profile = await this.enrichProfileWithRoleFields(user);
+    const profile = await this.enrichProfileWithRoleFields(user as Prisma.UserGetPayload<{ include: { college: true } }>)
     return profile;
   }
 
@@ -159,7 +160,7 @@ export class ProfileService {
         position: updateData.position,
         bio: updateData.bio,
         avatar: updateData.avatar,
-        preferences: updateData.preferences,
+        preferences: updateData.preferences as any,
         updatedAt: new Date(),
       },
       include: {
@@ -185,7 +186,7 @@ export class ProfileService {
     });
 
     // Return enriched profile
-    return this.enrichProfileWithRoleFields(updatedUser);
+    return this.enrichProfileWithRoleFields(updatedUser as Prisma.UserGetPayload<{ include: { college: true } }>);
   }
 
   /**
@@ -262,7 +263,7 @@ export class ProfileService {
    * Get users by role with profile information
    */
   async getUsersByRole(
-    role: UserRole,
+    role: AppRole,
     collegeId?: string,
     options: {
       limit?: number;
@@ -276,7 +277,7 @@ export class ProfileService {
       role,
       ...(collegeId && { collegeId }),
       ...(includeInactive ? {} : { isActive: true }),
-    };
+    } as const;
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -293,7 +294,7 @@ export class ProfileService {
 
     // Enrich profiles with role-specific fields
     const enrichedUsers = await Promise.all(
-      users.map(user => this.enrichProfileWithRoleFields(user))
+      users.map(user => this.enrichProfileWithRoleFields(user as Prisma.UserGetPayload<{ include: { college: true } }>))
     );
 
     return { users: enrichedUsers, total };
@@ -305,7 +306,7 @@ export class ProfileService {
   async searchUsers(
     query: string,
     filters: {
-      role?: UserRole;
+      role?: AppRole;
       collegeId?: string;
       department?: string;
       isActive?: boolean;
@@ -317,7 +318,7 @@ export class ProfileService {
   ): Promise<{ users: UserProfile[]; total: number }> {
     const { limit = 50, offset = 0 } = options;
 
-    const where = {
+    const where: any = {
       ...filters,
       OR: [
         { name: { contains: query, mode: 'insensitive' as const } },
@@ -342,7 +343,7 @@ export class ProfileService {
 
     // Enrich profiles with role-specific fields
     const enrichedUsers = await Promise.all(
-      users.map(user => this.enrichProfileWithRoleFields(user))
+      users.map(user => this.enrichProfileWithRoleFields(user as Prisma.UserGetPayload<{ include: { college: true } }>))
     );
 
     return { users: enrichedUsers, total };
@@ -351,8 +352,8 @@ export class ProfileService {
   /**
    * Enrich user profile with role-specific fields
    */
-  private async enrichProfileWithRoleFields(user: User & { college: College | null }): Promise<UserProfile> {
-    const profile = { ...user } as UserProfile;
+  private async enrichProfileWithRoleFields(user: Prisma.UserGetPayload<{ include: { college: true } }>): Promise<UserProfile> {
+    const profile = { ...user } as unknown as UserProfile;
 
     // Add role-specific fields based on user role
     switch (user.role) {
@@ -374,8 +375,6 @@ export class ProfileService {
    * Get teacher-specific fields
    */
   private async getTeacherFields(userId: string): Promise<any> {
-    // In a real implementation, you might have a separate TeacherProfile table
-    // For now, we'll return mock data or extend the User model
     return {
       subjects: [],
       qualifications: [],
@@ -389,7 +388,6 @@ export class ProfileService {
    * Get student-specific fields
    */
   private async getStudentFields(userId: string): Promise<any> {
-    // In a real implementation, you might have a separate StudentProfile table
     return {
       studentId: '',
       year: 1,
@@ -417,8 +415,6 @@ export class ProfileService {
     userId: string,
     updateData: ProfileUpdateData
   ): Promise<void> {
-    // In a real implementation, you would update role-specific tables here
-    // For now, we'll just log the update
     console.log(`Updating role-specific fields for user ${userId}:`, {
       teacherFields: updateData.teacherFields,
       studentFields: updateData.studentFields,
@@ -510,7 +506,7 @@ export class ProfileService {
    * Validate phone format
    */
   private isValidPhone(phone: string): boolean {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    const phoneRegex = /^[\+]?[^\s][\d]{0,15}$/;
     return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
   }
 }

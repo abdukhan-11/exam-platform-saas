@@ -1,4 +1,4 @@
-import { PrismaClient, UserInvitation, User, College, UserRole } from '@prisma/client';
+import { PrismaClient, Prisma, UserRole, College } from '@prisma/client';
 import { getEmailService } from '@/lib/email/email-service';
 import { generateSecureToken } from '@/lib/utils/crypto';
 import { AuditLogger } from '@/lib/security/audit-logger';
@@ -52,7 +52,7 @@ export class InvitationService {
   /**
    * Create and send user invitation
    */
-  async createInvitation(data: CreateInvitationData): Promise<UserInvitation> {
+  async createInvitation(data: CreateInvitationData): Promise<Prisma.UserInvitationGetPayload<{}>> {
     const { email, role, collegeId, invitedBy, expiresInHours = 72, customMessage } = data;
 
     // Check if user already exists
@@ -168,7 +168,7 @@ export class InvitationService {
       name: string;
       password: string;
     }
-  ): Promise<User> {
+  ): Promise<Prisma.UserGetPayload<{}>> {
     // Find and validate invitation
     const invitation = await this.prisma.userInvitation.findUnique({
       where: { invitationToken },
@@ -250,7 +250,7 @@ export class InvitationService {
       details: {
         invitedBy: invitation.invitedBy,
         role: user.role,
-        collegeId: user.collegeId,
+        collegeId: user.collegeId!,
       },
       ipAddress: 'system',
       userAgent: 'system',
@@ -383,7 +383,7 @@ export class InvitationService {
     const where = {
       collegeId,
       ...(status && { status }),
-    };
+    } as const;
 
     const [invitations, total] = await Promise.all([
       this.prisma.userInvitation.findMany({
@@ -405,14 +405,14 @@ export class InvitationService {
       this.prisma.userInvitation.count({ where }),
     ]);
 
-    return { invitations, total };
+    return { invitations: invitations as unknown as InvitationWithDetails[], total };
   }
 
   /**
    * Get invitation by token
    */
   async getInvitationByToken(token: string): Promise<InvitationWithDetails | null> {
-    return this.prisma.userInvitation.findUnique({
+    return (this.prisma.userInvitation.findUnique({
       where: { invitationToken: token },
       include: {
         college: true,
@@ -424,7 +424,7 @@ export class InvitationService {
           },
         },
       },
-    });
+    }) as unknown) as Promise<InvitationWithDetails | null>;
   }
 
   /**

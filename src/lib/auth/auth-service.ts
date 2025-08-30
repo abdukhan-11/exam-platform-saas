@@ -69,7 +69,7 @@ export async function registerUser(credentials: RegisterCredentials): Promise<Au
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
     // Try to find user first
-    let user = await db.user.findUnique({
+    const user = await db.user.findUnique({
       where: { email: credentials.email },
     });
 

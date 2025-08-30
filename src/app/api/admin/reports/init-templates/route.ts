@@ -17,11 +17,8 @@ export async function POST(request: NextRequest) {
     }
 
     const reportService = new AutomatedReportService();
-    
-    // Initialize system templates
-    await reportService.initializeSystemTemplates();
 
-    // Get the created templates
+    // Get the system templates (this will initialize them if needed)
     const templates = await reportService.getSystemReportTemplates();
 
     return NextResponse.json({ 

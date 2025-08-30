@@ -50,7 +50,7 @@ export const WelcomeEmail = ({
           </Text>
 
           <Text style={text}>
-            Your account has been successfully created and you're now a{' '}
+            Your account has been successfully created and you&apos;re now a{' '}
             <strong>{role}</strong> at <strong>{collegeName}</strong>.
           </Text>
 
@@ -79,7 +79,7 @@ export const WelcomeEmail = ({
           </Text>
 
           <Text style={text}>
-            If you have any questions or need help getting started, don't hesitate to reach out to your administrator.
+            If you have any questions or need help getting started, don&apos;t hesitate to reach out to your administrator.
           </Text>
 
           <Text style={footer}>

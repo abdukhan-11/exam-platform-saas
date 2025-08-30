@@ -48,7 +48,7 @@ export const InvitationEmail = ({
             />
           </Section>
 
-          <Heading style={h1}>You're Invited!</Heading>
+          <Heading style={h1}>You&apos;re Invited!</Heading>
 
           <Text style={text}>
             Hello,

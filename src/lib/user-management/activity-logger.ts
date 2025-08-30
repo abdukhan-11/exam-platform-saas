@@ -1,4 +1,5 @@
-import { PrismaClient, User, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { AppRole } from '@/types/auth';
 import { auditLogger } from '@/lib/security/audit-logger';
 import { db } from '@/lib/db';
 
@@ -14,7 +15,7 @@ export interface ActivityLogEntry {
   timestamp: Date;
   sessionId?: string;
   collegeId?: string;
-  role?: UserRole;
+  role?: AppRole;
 }
 
 export interface ActivityFilters {
@@ -22,7 +23,7 @@ export interface ActivityFilters {
   action?: string;
   resourceType?: string;
   collegeId?: string;
-  role?: UserRole;
+  role?: AppRole;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -46,7 +47,7 @@ export interface ActivitySummary {
     count: number;
   }>;
   activitiesByRole: Array<{
-    role: UserRole;
+    role: AppRole;
     count: number;
   }>;
 }
@@ -117,7 +118,7 @@ export class ActivityLogger {
       metadata: data.details,
     });
 
-    return activityLog;
+    return activityLog as ActivityLogEntry;
   }
 
   /**
@@ -180,7 +181,7 @@ export class ActivityLogger {
     ]);
 
     return {
-      activities: activities.map((activity: any) => ({
+      activities: (activities as any[]).map((activity: any) => ({
         id: activity.id,
         userId: activity.userId,
         action: activity.action,
@@ -263,7 +264,7 @@ export class ActivityLogger {
     });
 
     // Get user names for top users
-    const topUserIds = topUsers.map((u: any) => u.userId);
+    const topUserIds = (topUsers as any[]).map((u: any) => u.userId);
     const users = await this.db.user.findMany({
       where: { id: { in: topUserIds } },
       select: { id: true, name: true, email: true },
@@ -305,24 +306,24 @@ export class ActivityLogger {
     return {
       totalActivities,
       uniqueUsers: uniqueUsers.length,
-      topActions: topActions.map((action: any) => ({
+      topActions: (topActions as any[]).map((action: any) => ({
         action: action.action,
         count: action._count.action,
       })),
-      topUsers: topUsers.map((user: any) => {
-        const userInfo = userMap.get(user.userId);
+      topUsers: (topUsers as any[]).map((user: any) => {
+        const userInfo = userMap.get(user.userId) as { name?: string; email: string } | undefined;
         return {
           userId: user.userId,
-          userName: userInfo?.name || userInfo?.email || 'Unknown',
+          userName: (userInfo?.name as string | undefined) || userInfo?.email || 'Unknown',
           count: user._count.userId,
         };
       }),
-      activitiesByDay: activitiesByDay.map((day: any) => ({
+      activitiesByDay: (activitiesByDay as any[]).map((day: any) => ({
         date: day.date,
         count: Number(day.count),
       })),
-      activitiesByRole: activitiesByRole.map((role: any) => ({
-        role: role.role as UserRole,
+      activitiesByRole: (activitiesByRole as any[]).map((role: any) => ({
+        role: role.role as AppRole,
         count: role._count.role,
       })),
     };
@@ -341,7 +342,7 @@ export class ActivityLogger {
       take: limit,
     });
 
-    return activities.map((activity: any) => ({
+    return (activities as any[]).map((activity: any) => ({
       id: activity.id,
       userId: activity.userId,
       action: activity.action,
@@ -384,7 +385,7 @@ export class ActivityLogger {
       take: limit,
     });
 
-    return activities.map((activity: any) => ({
+    return (activities as any[]).map((activity: any) => ({
       id: activity.id,
       userId: activity.userId,
       action: activity.action,
@@ -416,7 +417,7 @@ export class ActivityLogger {
       },
     });
 
-    return result.count;
+    return (result as { count: number }).count;
   }
 
   /**

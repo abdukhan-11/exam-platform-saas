@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Return the export result
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(exportResult.data as any, {
       headers: {
         'Content-Type': exportResult.mimeType,
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return the export result
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(exportResult.data as any, {
       headers: {
         'Content-Type': exportResult.mimeType,
         'Content-Disposition': `attachment; filename="${exportResult.filename}"`,

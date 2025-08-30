@@ -61,7 +61,7 @@ function UserRegistrationForm() {
     }
 
     let score = 0;
-    let feedback = [];
+    const feedback = [];
 
     if (formData.password.length >= 8) score++;
     else feedback.push('At least 8 characters');

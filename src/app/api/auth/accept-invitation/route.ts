@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       invitation: {
         email: invitation.email,
         role: invitation.role,
-        college: invitation.college.name,
+        college: invitation.college?.name || 'Unknown College',
         inviter: invitation.inviter.name || invitation.inviter.email,
         expiresAt: invitation.expiresAt,
         customMessage: invitation.customMessage,
