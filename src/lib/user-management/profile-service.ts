@@ -140,7 +140,7 @@ export class ProfileService {
 
     // Check if email is being changed
     if (updateData.email) {
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: updateData.email },
       });
 
@@ -357,14 +357,13 @@ export class ProfileService {
 
     // Add role-specific fields based on user role
     switch (user.role) {
-      case 'TEACHER':
-        profile.teacherFields = await this.getTeacherFields(user.id);
-        break;
       case 'STUDENT':
         profile.studentFields = await this.getStudentFields(user.id);
         break;
       case 'COLLEGE_ADMIN':
         profile.collegeAdminFields = await this.getCollegeAdminFields(user.id);
+        // Admin acts as teacher as well
+        profile.teacherFields = await this.getTeacherFields(user.id);
         break;
     }
 

@@ -209,11 +209,10 @@ export function ActivityLogs({ userId, collegeId }: ActivityLogsProps) {
     const roleConfig = {
       SUPER_ADMIN: { variant: 'destructive' as const, text: 'Super Admin' },
       COLLEGE_ADMIN: { variant: 'default' as const, text: 'College Admin' },
-      TEACHER: { variant: 'secondary' as const, text: 'Teacher' },
       STUDENT: { variant: 'outline' as const, text: 'Student' },
-    };
+    } as const;
 
-    const config = roleConfig[role] || roleConfig.STUDENT;
+    const config = (roleConfig as any)[role] || roleConfig.STUDENT;
 
     return (
       <Badge variant={config.variant}>
@@ -323,7 +322,7 @@ export function ActivityLogs({ userId, collegeId }: ActivityLogsProps) {
                 <SelectItem value="">All roles</SelectItem>
                 <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                 <SelectItem value="COLLEGE_ADMIN">College Admin</SelectItem>
-                <SelectItem value="TEACHER">Teacher</SelectItem>
+                
                 <SelectItem value="STUDENT">Student</SelectItem>
               </SelectContent>
             </Select>

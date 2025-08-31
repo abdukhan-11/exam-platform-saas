@@ -43,7 +43,8 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!college) {
+    // Super Admin does not require college context
+    if (!college && activeTab !== 'super-admin') {
       setError('Please select a college first');
       return;
     }
@@ -63,7 +64,7 @@ function LoginForm() {
         result = await signIn('admin-teacher', {
           email,
           password,
-          collegeUsername: college.username,
+          collegeUsername: college!.username,
           redirect: false,
         });
       } else if (activeTab === 'student') {
@@ -75,7 +76,18 @@ function LoginForm() {
         result = await signIn('student', {
           rollNo,
           password,
-          collegeUsername: college.username,
+          collegeUsername: college!.username,
+          redirect: false,
+        });
+      } else if (activeTab === 'super-admin') {
+        if (!email || !password) {
+          setError('Email and password are required');
+          return;
+        }
+
+        result = await signIn('super-admin', {
+          email,
+          password,
           redirect: false,
         });
       } else {
@@ -86,7 +98,31 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid credentials');
       } else if (result?.ok) {
-        router.push(callbackUrl);
+        // Get the proper redirect URL based on user role
+        try {
+          const response = await fetch('/api/auth/get-redirect-url');
+          if (response.ok) {
+            const data = await response.json();
+            router.push(data.redirectUrl);
+          } else {
+            // Fallback to default redirect based on authentication method
+            let redirectUrl = '/dashboard';
+            
+            if (activeTab === 'admin-teacher') {
+              redirectUrl = '/dashboard/college-admin';
+            } else if (activeTab === 'student') {
+              redirectUrl = '/dashboard/student';
+            } else if (activeTab === 'super-admin') {
+              redirectUrl = '/dashboard/superadmin';
+            }
+            
+            router.push(redirectUrl);
+          }
+        } catch (error) {
+          console.error('Error getting redirect URL:', error);
+          // Fallback to default redirect
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       setError('An error occurred during login');
@@ -108,7 +144,7 @@ function LoginForm() {
     router.push('/');
   };
 
-  // If no college is selected, redirect to home
+  // If no college is selected, block access here (super admin has a dedicated route)
   if (!college) {
     return (
       <MainLayout>
@@ -150,26 +186,28 @@ function LoginForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
-            {/* College Info Display */}
-            <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-blue-900 truncate">{college.name}</p>
-                  <p className="text-xs text-blue-700">@{college.username}</p>
+            {/* College Info Display (not needed for Super Admin) */}
+            {activeTab !== 'super-admin' && college && (
+              <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-900 truncate">{college.name}</p>
+                    <p className="text-xs text-blue-700">@{college.username}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToCollegeSelection}
+                    className="text-blue-600 hover:text-blue-800 flex-shrink-0 ml-2"
+                  >
+                    <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    <span className="hidden sm:inline">Change</span>
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackToCollegeSelection}
-                  className="text-blue-600 hover:text-blue-800 flex-shrink-0 ml-2"
-                >
-                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  <span className="hidden sm:inline">Change</span>
-                </Button>
               </div>
-            </div>
+            )}
 
-            {/* Authentication Tabs */}
+            {/* Authentication Tabs (Super Admin moved to /auth/superadmin) */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="admin-teacher">Admin/Teacher</TabsTrigger>
@@ -195,6 +233,7 @@ function LoginForm() {
                       required
                       disabled={isLoading}
                       className="h-11 sm:h-12 text-sm sm:text-base"
+                      data-testid="email"
                     />
                   </div>
                   
@@ -209,6 +248,7 @@ function LoginForm() {
                       required
                       disabled={isLoading}
                       className="h-11 sm:h-12 text-sm sm:text-base"
+                      data-testid="password"
                     />
                   </div>
                   
@@ -237,6 +277,7 @@ function LoginForm() {
                       required
                       disabled={isLoading}
                       className="h-11 sm:h-12 text-sm sm:text-base"
+                      data-testid="roll-no"
                     />
                   </div>
                   
@@ -251,6 +292,7 @@ function LoginForm() {
                       required
                       disabled={isLoading}
                       className="h-11 sm:h-12 text-sm sm:text-base"
+                      data-testid="student-password"
                     />
                   </div>
                   
@@ -259,6 +301,7 @@ function LoginForm() {
                   </Button>
                 </form>
               </TabsContent>
+
             </Tabs>
             
             <div className="text-center space-y-2 mt-6">

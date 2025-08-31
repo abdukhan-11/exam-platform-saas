@@ -1,61 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
-import { prisma } from '@/lib/db';
+import { AppRole, UserSession } from '@/types/auth';
+import { hasAnyRole } from '@/lib/auth/utils';
+import { db } from '@/lib/db';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is super admin
-    if (session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
+    const session = await getServerSession(authOptions) as UserSession | null;
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
     const { id } = await params;
-    const { isActive } = await request.json();
+    if (!id) return NextResponse.json({ message: 'Invalid college ID' }, { status: 400 });
 
+    const body = await request.json().catch(() => ({}));
+    const isActive = typeof body.isActive === 'boolean' ? body.isActive : undefined;
     if (typeof isActive !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+      return NextResponse.json({ message: 'isActive boolean required' }, { status: 400 });
     }
 
-    // Check if college exists
-    const existingCollege = await prisma.college.findUnique({
-      where: { id }
-    });
-
-    if (!existingCollege) {
-      return NextResponse.json({ error: 'College not found' }, { status: 404 });
-    }
-
-    // Update college status
-    const updatedCollege = await prisma.college.update({
+    const updated = await db.college.update({
       where: { id },
-      data: { isActive }
+      data: { isActive },
+      select: { id: true, isActive: true }
     });
 
-    return NextResponse.json({
-      success: true,
-      message: `College ${isActive ? 'activated' : 'deactivated'} successfully`,
-      college: {
-        id: updatedCollege.id,
-        name: updatedCollege.name,
-        isActive: updatedCollege.isActive
-      }
-    });
-
+    return NextResponse.json({ message: 'Status updated', college: updated });
   } catch (error) {
-    console.error('Toggle status error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Failed to update status' }, { status: 500 });
   }
 }

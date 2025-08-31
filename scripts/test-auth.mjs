@@ -85,7 +85,7 @@ async function testAuth() {
     console.log('6. Testing college username resolution...');
     if (colleges.length > 0) {
       const testCollege = colleges[0];
-      const foundCollege = await prisma.college.findUnique({
+      const foundCollege = await prisma.college.findFirst({
         where: { username: testCollege.username, isActive: true },
         select: { id: true, name: true, username: true, isActive: true }
       });

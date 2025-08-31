@@ -14,7 +14,7 @@ async function seedEventsAndNotifications() {
     }
 
     const users = await prisma.user.findMany({
-      where: { role: { in: ['TEACHER', 'STUDENT'] } },
+      where: { role: { in: ['COLLEGE_ADMIN', 'STUDENT'] } },
       include: { college: true }
     });
 
@@ -28,7 +28,7 @@ async function seedEventsAndNotifications() {
       console.log(`📅 Creating events for ${college.name}...`);
       
       const collegeUsers = users.filter(user => user.collegeId === college.id);
-      const teachers = collegeUsers.filter(user => user.role === 'TEACHER');
+      const teachers = collegeUsers.filter(user => user.role === 'COLLEGE_ADMIN');
       const students = collegeUsers.filter(user => user.role === 'STUDENT');
 
       // Create different types of events

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if admin email already exists
-    const existingAdmin = await db.user.findUnique({
+    const existingAdmin = await db.user.findFirst({
       where: { email: credentials.adminEmail }
     });
 

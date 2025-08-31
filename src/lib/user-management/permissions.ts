@@ -149,47 +149,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     },
   },
   
-  [AppRole.TEACHER]: {
-    role: AppRole.TEACHER,
-    permissions: [
-      // User Management (limited - can view students)
-      Permission.READ_USER,
-      Permission.VIEW_USERS,
-      
-      // Class Management (classes they teach)
-      Permission.READ_CLASS,
-      
-      // Subject Management (subjects they teach)
-      Permission.READ_SUBJECT,
-      
-      // Exam Management (exams they create/conduct)
-      Permission.CREATE_EXAM,
-      Permission.READ_EXAM,
-      Permission.UPDATE_EXAM,
-      Permission.SCHEDULE_EXAM,
-      Permission.CONDUCT_EXAM,
-      Permission.GRADE_EXAM,
-      
-      // Question Management
-      Permission.CREATE_QUESTION,
-      Permission.READ_QUESTION,
-      Permission.UPDATE_QUESTION,
-      Permission.DELETE_QUESTION,
-      
-      // Results Management
-      Permission.READ_RESULTS,
-      Permission.UPDATE_RESULTS,
-      Permission.EXPORT_RESULTS,
-      
-      // Analytics and Reports (limited)
-      Permission.READ_ANALYTICS,
-      Permission.READ_REPORTS,
-    ],
-    restrictions: {
-      collegeScope: true,
-      limitedAccess: ['own_classes', 'own_subjects', 'own_exams'],
-    },
-  },
+  // TEACHER role removed: teacher capabilities are part of COLLEGE_ADMIN
   
   [AppRole.STUDENT]: {
     role: AppRole.STUDENT,

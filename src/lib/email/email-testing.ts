@@ -281,7 +281,7 @@ export class EmailTestingService {
   async testNotificationPreferences(): Promise<EmailTestResult> {
     try {
       // Test getting default preferences for each role
-      const roles = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT'] as const;
+      const roles = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'STUDENT'] as const;
       
       for (const role of roles) {
         const defaultPrefs = this.preferencesService.getDefaultPreferences(role);

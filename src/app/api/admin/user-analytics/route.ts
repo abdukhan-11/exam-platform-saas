@@ -190,7 +190,7 @@ function getRoleColor(role: string): string {
   switch (role) {
     case 'SUPER_ADMIN': return '#ff6b6b';
     case 'COLLEGE_ADMIN': return '#4ecdc4';
-    case 'TEACHER': return '#45b7d1';
+    // TEACHER removed
     case 'STUDENT': return '#96ceb4';
     default: return '#8884d8';
   }

@@ -40,7 +40,7 @@ interface College {
   email: string | null;
   website: string | null;
   isActive: boolean;
-  subscriptionTier: 'free' | 'basic' | 'premium' | 'enterprise';
+  subscriptionStatus: string;
   userCount: number;
   createdAt: string;
   updatedAt: string;
@@ -59,18 +59,22 @@ interface CollegeTableProps {
   itemsPerPage?: number;
 }
 
-const subscriptionTierColors = {
-  free: 'bg-gray-100 text-gray-800',
-  basic: 'bg-blue-100 text-blue-800',
-  premium: 'bg-purple-100 text-purple-800',
-  enterprise: 'bg-green-100 text-green-800'
+const subscriptionStatusColors: Record<string, string> = {
+  TRIAL: 'bg-gray-100 text-gray-800',
+  BASIC: 'bg-blue-100 text-blue-800',
+  STANDARD: 'bg-indigo-100 text-indigo-800',
+  PREMIUM: 'bg-purple-100 text-purple-800',
+  ENTERPRISE: 'bg-green-100 text-green-800',
+  EXPIRED: 'bg-red-100 text-red-800',
 };
 
-const subscriptionTierLabels = {
-  free: 'Free',
-  basic: 'Basic',
-  premium: 'Premium',
-  enterprise: 'Enterprise'
+const subscriptionStatusLabels: Record<string, string> = {
+  TRIAL: 'Trial',
+  BASIC: 'Basic',
+  STANDARD: 'Standard',
+  PREMIUM: 'Premium',
+  ENTERPRISE: 'Enterprise',
+  EXPIRED: 'Expired',
 };
 
 export default function CollegeTable({ 
@@ -148,8 +152,8 @@ export default function CollegeTable({
   // Initial fetch
   useEffect(() => {
     const filters: any = {};
-    if (filterTier !== 'all') filters.tier = filterTier;
-    if (filterStatus !== 'all') filters.status = filterStatus;
+    if (filterTier !== 'all') filters.tier = filterTier; // maps to subscriptionStatus on API
+    if (filterStatus !== 'all') filters.status = filterStatus; // maps to isActive on API
     
     fetchColleges(1, searchTerm, filters);
   }, [sortField, sortDirection, filterTier, filterStatus]);
@@ -462,10 +466,12 @@ export default function CollegeTable({
                 className="px-3 py-2 border rounded-md text-sm"
               >
                 <option value="all">All Tiers</option>
-                <option value="free">Free</option>
-                <option value="basic">Basic</option>
-                <option value="premium">Premium</option>
-                <option value="enterprise">Enterprise</option>
+                <option value="TRIAL">Trial</option>
+                <option value="BASIC">Basic</option>
+                <option value="STANDARD">Standard</option>
+                <option value="PREMIUM">Premium</option>
+                <option value="ENTERPRISE">Enterprise</option>
+                <option value="EXPIRED">Expired</option>
               </select>
 
               <select
@@ -584,8 +590,8 @@ export default function CollegeTable({
                       )}
                     </td>
                     <td className="p-3">
-                      <Badge className={subscriptionTierColors[college.subscriptionTier]}>
-                        {subscriptionTierLabels[college.subscriptionTier]}
+                      <Badge className={subscriptionStatusColors[college.subscriptionStatus] || 'bg-gray-100 text-gray-800'}>
+                        {subscriptionStatusLabels[college.subscriptionStatus] || college.subscriptionStatus || 'Unknown'}
                       </Badge>
                     </td>
                     <td className="p-3">

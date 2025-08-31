@@ -23,7 +23,7 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    role: UserRole.TEACHER,
+    role: UserRole.COLLEGE_ADMIN,
     message: '',
   });
 
@@ -31,7 +31,6 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
   const canInviteCollegeAdmin = session?.user && PermissionService.hasPermission(session.user.role, Permission.INVITE_USER);
 
   const availableRoles = [
-    { value: UserRole.TEACHER, label: 'Teacher' },
     { value: UserRole.STUDENT, label: 'Student' },
     { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
     { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
@@ -45,7 +44,7 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
     if (session?.user.role === UserRole.COLLEGE_ADMIN) {
       return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
     }
-    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+    return role.value === UserRole.STUDENT; // No teacher role anymore
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +72,7 @@ export function UserInviteDialog({ open, onOpenChange, onSuccess, collegeId }: U
       onOpenChange(false);
       setFormData({
         email: '',
-        role: UserRole.TEACHER,
+        role: UserRole.COLLEGE_ADMIN,
         message: '',
       });
     } catch (error) {

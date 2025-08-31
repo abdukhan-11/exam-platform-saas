@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const sortBy = searchParams.get('sortBy') || 'name';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
+    const tier = searchParams.get('tier') || '';
+    const status = searchParams.get('status') || '';
 
     // Validate pagination parameters
     if (page < 1 || limit < 1 || limit > 100) {
@@ -68,6 +70,13 @@ export async function GET(request: NextRequest) {
         { website: { contains: search } }
       ];
     }
+    // Optional filters: tier => subscriptionStatus, status => isActive
+    if (tier && tier !== 'all') {
+      whereClause.subscriptionStatus = tier;
+    }
+    if (status && status !== 'all') {
+      whereClause.isActive = status === 'active';
+    }
 
     // Build order by clause
     const orderBy: any = {};
@@ -93,8 +102,10 @@ export async function GET(request: NextRequest) {
         email: true,
         website: true,
         isActive: true,
+        subscriptionStatus: true,
         createdAt: true,
         updatedAt: true,
+        _count: { select: { users: true } },
       },
     });
 
@@ -112,9 +123,15 @@ export async function GET(request: NextRequest) {
       request
     );
 
+    // Map userCount for UI expectations
+    const result = colleges.map((c) => ({
+      ...c,
+      userCount: (c as any)._count?.users ?? 0,
+    }));
+
     return apiResponse.withPagination(
       'Colleges fetched successfully',
-      colleges,
+      result,
       { total, page, limit, pages: totalPages },
       {
         endpoint: request.nextUrl?.pathname,

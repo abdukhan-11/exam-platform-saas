@@ -1,6 +1,5 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import type { NextRequestWithAuth } from 'next-auth/middleware';
 import { AppRole, isValidRole } from '@/types/auth';
 
@@ -9,7 +8,21 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const { token } = req.nextauth;
     
-    // If no token, redirect to login
+    // Allow unauthenticated access to public/auth routes explicitly
+    const publicPaths = [
+      '/auth/login',
+      '/auth/logout',
+      '/auth/error',
+      '/auth/login-student',
+      '/auth/superadmin',
+      '/college/select',
+      '/',
+    ];
+    if (publicPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+      return NextResponse.next();
+    }
+
+    // If no token for protected routes, redirect to login
     if (!token) {
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
@@ -54,12 +67,11 @@ export default withAuth(
       return NextResponse.next();
     }
 
-    // Teacher routes
+    // Teacher routes now accessible by college admin
     if (pathname.startsWith('/dashboard/teacher')) {
-      if (role !== 'TEACHER') {
+      if (role !== 'COLLEGE_ADMIN') {
         return NextResponse.redirect(new URL('/forbidden', req.url));
       }
-      // Ensure teacher can only access their own college
       if (collegeId && pathname.includes('/colleges/')) {
         const urlCollegeId = pathname.split('/colleges/')[1]?.split('/')[0];
         if (urlCollegeId && urlCollegeId !== collegeId) {
@@ -165,18 +177,34 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ req, token }) => {
+        const pathname = req.nextUrl.pathname;
+        const publicPaths = [
+          '/auth/login',
+          '/auth/logout',
+          '/auth/error',
+          '/auth/login-student',
+          '/auth/superadmin',
+          '/college/select',
+          '/',
+        ];
+        if (publicPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+          return true;
+        }
+        // Only require auth for matched routes (dashboard/admin/api/protected)
+        return !!token;
+      },
     },
   }
 );
 
 export const config = {
   matcher: [
+    // App pages requiring auth
     '/dashboard/:path*',
-    '/api/protected/:path*',
-    '/api/:path*',
     '/admin/:path*',
-    '/college/select/:path*',
+    // Protected API namespace only (avoid intercepting all API routes like auth, uploads, webhooks)
+    '/api/protected/:path*',
   ],
 };
 

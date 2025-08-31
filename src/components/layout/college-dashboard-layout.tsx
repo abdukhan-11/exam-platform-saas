@@ -45,14 +45,7 @@ const getNavigationItems = (role: AppRole) => {
     ];
   }
 
-  if (role === AppRole.TEACHER) {
-    return [
-      ...baseItems,
-      { href: '/dashboard/my-classes', label: 'My Classes', icon: GraduationCap },
-      { href: '/dashboard/student-progress', label: 'Student Progress', icon: BarChart3 },
-      { href: '/dashboard/exam-management', label: 'Exam Management', icon: FileText },
-    ];
-  }
+  // Teacher role removed; college admins see full navigation above
 
   return baseItems;
 };
@@ -67,14 +60,7 @@ const getQuickActions = (role: AppRole) => {
     ];
   }
 
-  if (role === AppRole.TEACHER) {
-    return [
-      { label: 'Create Exam', href: '/dashboard/exam-management/new', icon: Plus },
-      { label: 'View Classes', href: '/dashboard/my-classes', icon: GraduationCap },
-      { label: 'Student Progress', href: '/dashboard/student-progress', icon: BarChart3 },
-      { label: 'Schedule Class', href: '/dashboard/calendar/new', icon: Calendar },
-    ];
-  }
+  // Teacher role removed; teacher features accessible to college admin
 
   return [];
 };
@@ -113,13 +99,6 @@ export function CollegeDashboardLayout({ children, userRole, collegeName, userNa
           totalClasses: 45,
           totalSubjects: 28,
           upcomingExams: 12,
-        });
-      } else if (userRole === AppRole.TEACHER) {
-        setMetrics({
-          totalStudents: 180,
-          totalClasses: 6,
-          totalSubjects: 4,
-          upcomingExams: 3,
         });
       }
       

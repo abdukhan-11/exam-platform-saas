@@ -132,7 +132,7 @@ export class BulkOperationsService {
         }
 
         // Check if user already exists
-        const existingUser = await this.prisma.user.findUnique({
+        const existingUser = await this.prisma.user.findFirst({
           where: { email: userData.email },
         });
 
@@ -398,7 +398,7 @@ export class BulkOperationsService {
     const templateData = [
       ['email', 'name', 'role', 'department', 'position', 'phone', 'studentId', 'year', 'major', 'isActive'],
       ['john.doe@example.com', 'John Doe', 'STUDENT', 'Computer Science', 'Student', '+1234567890', 'STU001', '2', 'Computer Science', 'true'],
-      ['jane.smith@example.com', 'Jane Smith', 'TEACHER', 'Mathematics', 'Professor', '+1234567891', '', '', '', 'true'],
+      ['jane.smith@example.com', 'Jane Smith', 'COLLEGE_ADMIN', 'Mathematics', 'Professor', '+1234567891', '', '', '', 'true'],
     ];
 
     const csvContent = templateData
@@ -454,7 +454,7 @@ export class BulkOperationsService {
       }
 
       // Check if user already exists
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: userData.email },
       });
 

@@ -35,7 +35,7 @@ export interface SecurityPolicy {
     roleHierarchy: {
       SUPER_ADMIN: string[];
       COLLEGE_ADMIN: string[];
-      TEACHER: string[];
+      // TEACHER removed
       STUDENT: string[];
     };
     permissionMatrix: Record<string, string[]>;
@@ -165,7 +165,7 @@ export const DEFAULT_SECURITY_POLICY: SecurityPolicy = {
     roleHierarchy: {
       SUPER_ADMIN: ['*'],
       COLLEGE_ADMIN: ['college_management', 'user_management', 'exam_management'],
-      TEACHER: ['exam_creation', 'student_management', 'grade_management'],
+      // TEACHER removed
       STUDENT: ['exam_taking', 'grade_viewing', 'profile_management']
     },
     permissionMatrix: {

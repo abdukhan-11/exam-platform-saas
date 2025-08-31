@@ -19,7 +19,7 @@ async function main() {
   // College
   const college = await prisma.college.upsert({
     where: { code: 'COLL-001' },
-    update: { name: 'Demo College' },
+    update: { name: 'Demo College', username: 'demo-college' },
     create: {
       code: 'COLL-001',
       name: 'Demo College',
@@ -71,30 +71,32 @@ async function main() {
     },
   });
 
-  // User (Teacher)
-  const teacherPassword = await bcrypt.hash('teacher123', 10);
-  const teacher = await prisma.user.upsert({
-    where: { email: 'teacher@demo-college.edu' },
+  // User (College Admin) - can perform all teacher functions
+  const adminPassword2 = await bcrypt.hash('admin123', 10);
+  const collegeAdminUser = await prisma.user.upsert({
+    where: { collegeId_email: { collegeId: college.id, email: 'admin@demo-college.edu' } },
     update: {},
     create: {
-      name: 'John Doe',
-      email: 'teacher@demo-college.edu',
-      password: teacherPassword,
-      role: 'TEACHER',
+      name: 'College Admin',
+      email: 'admin@demo-college.edu',
+      password: adminPassword2,
+      role: 'COLLEGE_ADMIN',
       collegeId: college.id,
+      position: 'Administrator', // This will redirect to college-admin dashboard
     },
   });
 
   // User (Student)
   const studentPassword = await bcrypt.hash('student123', 10);
   const student = await prisma.user.upsert({
-    where: { email: 'student@demo-college.edu' },
+    where: { collegeId_email: { collegeId: college.id, email: 'student@demo-college.edu' } },
     update: {},
     create: {
       name: 'Jane Smith',
       email: 'student@demo-college.edu',
       password: studentPassword,
       role: 'STUDENT',
+      rollNo: 'STU-001',
       collegeId: college.id,
     },
   });
@@ -116,18 +118,18 @@ async function main() {
     },
   });
 
-  // Teacher Class Assignment
+  // Admin Class Assignment (admin handles both admin and teacher functions)
   const teacherAssignment = await prisma.teacherClassAssignment.upsert({
     where: { 
       teacherId_classId_subjectId: { 
-        teacherId: teacher.id, 
+        teacherId: collegeAdminUser.id, 
         classId: class1.id, 
         subjectId: subject.id 
       } 
     },
     update: {},
     create: {
-      teacherId: teacher.id,
+      teacherId: collegeAdminUser.id,
       classId: class1.id,
       subjectId: subject.id,
     },
@@ -154,7 +156,7 @@ async function main() {
     college, 
     class1,
     subject, 
-    teacher, 
+    collegeAdminUser, 
     student, 
     studentProfile,
     teacherAssignment,

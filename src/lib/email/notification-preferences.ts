@@ -28,9 +28,7 @@ export interface NotificationPreferences {
   collegeId: string;
 }
 
-export type DefaultPreferences = {
-  [key in UserRole]: Partial<NotificationPreferences>;
-}
+export type DefaultPreferences = Partial<Record<UserRole, Partial<NotificationPreferences>>>;
 
 export class NotificationPreferencesService {
   private prisma: PrismaClient;
@@ -90,29 +88,7 @@ export class NotificationPreferencesService {
         },
         optOutTypes: [],
       },
-      TEACHER: {
-        emailNotifications: true,
-        smsNotifications: false,
-        pushNotifications: true,
-        inAppNotifications: true,
-        webhookNotifications: false,
-        emailFrequency: 'immediate',
-        smsFrequency: 'never',
-        pushFrequency: 'immediate',
-        eventTypes: {
-          EXAM: { email: true, sms: false, push: true, inApp: true },
-          ASSIGNMENT: { email: true, sms: false, push: true, inApp: true },
-          ANNOUNCEMENT: { email: true, sms: false, push: true, inApp: true },
-          OTHER: { email: false, sms: false, push: false, inApp: true },
-        },
-        quietHours: {
-          enabled: true,
-          startTime: '22:00',
-          endTime: '08:00',
-          timezone: 'UTC',
-        },
-        optOutTypes: [],
-      },
+      // TEACHER role removed; teacher defaults are now covered by COLLEGE_ADMIN
       STUDENT: {
         emailNotifications: true,
         smsNotifications: false,
@@ -138,7 +114,7 @@ export class NotificationPreferencesService {
       },
     };
 
-    return defaults[userRole] || defaults.STUDENT;
+    return (defaults[userRole] ?? defaults.STUDENT)!;
   }
 
   /**
@@ -335,8 +311,24 @@ export class NotificationPreferencesService {
         return true;
       }
 
+      // Normalize optOutTypes to an array
+      let optOut: EventType[] = [];
+      if (subscription.optOutTypes) {
+        try {
+          const raw = subscription.optOutTypes as any;
+          if (typeof raw === 'string') {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) optOut = parsed as EventType[];
+          } else if (Array.isArray(raw)) {
+            optOut = raw as EventType[];
+          }
+        } catch {
+          optOut = [];
+        }
+      }
+
       // Check if subscription is active and not opted out
-      return subscription.isActive && (!subscription.optOutTypes || !subscription.optOutTypes.includes(eventType));
+      return subscription.isActive && !optOut.includes(eventType);
     } catch (error) {
       console.error('Error checking notification preferences:', error);
       return true; // Default to sending on error

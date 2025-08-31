@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const credentials = studentLoginSchema.parse(body);
 
-    // First, resolve the college
-    const college = await db.college.findUnique({
+    // First, resolve the college (use findFirst to include isActive filter)
+    const college = await db.college.findFirst({
       where: { 
         username: credentials.collegeUsername,
         isActive: true 

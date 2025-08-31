@@ -1,6 +1,9 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { 
   Building2, 
   Users, 
@@ -12,15 +15,27 @@ import {
 } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
-  // TODO: Replace with actual data from API
-  const mockData = {
-    totalColleges: 24,
-    activeUsers: 1247,
-    totalExams: 156,
-    activeSubscriptions: 18,
-    systemHealth: 'Healthy',
-    revenue: '$12,450'
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch('/api/admin/analytics');
+        if (!res.ok) throw new Error(`Failed: ${res.status}`);
+        const json = await res.json();
+        setData(json);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -39,7 +54,7 @@ export default function SuperAdminDashboard() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.totalColleges}</div>
+            <div className="text-2xl font-bold">{loading ? '—' : data?.overview?.totalColleges ?? '—'}</div>
             <p className="text-xs text-muted-foreground">
               +2 from last month
             </p>
@@ -52,9 +67,9 @@ export default function SuperAdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.activeUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{loading ? '—' : (data?.overview?.totalUsers ?? 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {loading ? '' : `+${(data?.overview?.monthlyGrowth ?? 0).toFixed(1)}% from last month`}
             </p>
           </CardContent>
         </Card>
@@ -65,7 +80,7 @@ export default function SuperAdminDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.totalExams}</div>
+            <div className="text-2xl font-bold">{loading ? '—' : data?.overview?.totalExams ?? '—'}</div>
             <p className="text-xs text-muted-foreground">
               +8 from last month
             </p>
@@ -78,7 +93,7 @@ export default function SuperAdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.activeSubscriptions}</div>
+            <div className="text-2xl font-bold">{loading ? '—' : (data?.revenueData?.subscriptionMetrics?.totalActive ?? '—')}</div>
             <p className="text-xs text-muted-foreground">
               +1 from last month
             </p>
@@ -91,7 +106,7 @@ export default function SuperAdminDashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{mockData.systemHealth}</div>
+            <div className="text-2xl font-bold text-green-600">{loading ? '—' : (data?.systemHealth?.api?.status === 'healthy' ? 'Healthy' : data?.systemHealth?.api?.status || '—')}</div>
             <p className="text-xs text-muted-foreground">
               All systems operational
             </p>
@@ -104,7 +119,7 @@ export default function SuperAdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.revenue}</div>
+            <div className="text-2xl font-bold">{loading ? '—' : `$${(data?.revenueData?.mrr ?? 0).toLocaleString()}`}</div>
             <p className="text-xs text-muted-foreground">
               +23% from last month
             </p>

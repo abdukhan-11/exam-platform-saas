@@ -32,13 +32,13 @@ export async function GET(req: NextRequest) {
       collegeId = queryCollegeId;
     }
 
-    // Teachers can only read subjects they are assigned to
+    // College Admins (acting as teachers) can read subjects they are assigned to
     const canReadSubject = PermissionService.hasPermission(currentUser.role, Permission.READ_SUBJECT);
     if (!canReadSubject) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (currentUser.role === 'TEACHER') {
+    if (currentUser.role === 'COLLEGE_ADMIN') {
       const assignments = await db.teacherClassAssignment.findMany({
         where: { teacherId: currentUser.id, isActive: true },
         include: { subject: true, class: true },
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ items: subjects });
     }
 
-    // College Admins can list all subjects in their college
+    // College Admins and Super Admins can list subjects
     if (currentUser.role === 'COLLEGE_ADMIN' || currentUser.role === 'SUPER_ADMIN') {
       const where: { collegeId?: string } = {};
       if (currentUser.role === 'COLLEGE_ADMIN') {

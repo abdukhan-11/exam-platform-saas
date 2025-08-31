@@ -158,7 +158,7 @@ function UserRegistrationForm() {
         },
         body: JSON.stringify({
           ...formData,
-          role: activeTab.toUpperCase(),
+          role: activeTab === 'teacher' ? 'COLLEGE_ADMIN' : 'STUDENT',
           collegeUsername: college.username,
         }),
       });
@@ -280,7 +280,7 @@ function UserRegistrationForm() {
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="student">Student</TabsTrigger>
-                <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                <TabsTrigger value="teacher">College Admin</TabsTrigger>
               </TabsList>
 
               <TabsContent value="student" className="space-y-4">
@@ -624,7 +624,7 @@ function UserRegistrationForm() {
                         Creating Account...
                       </>
                     ) : (
-                      'Create Teacher Account'
+                      'Create Admin Account'
                     )}
                   </Button>
                 </form>

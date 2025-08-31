@@ -192,8 +192,9 @@ export class BrowserCompatibilityManager {
    * Detect browser information
    */
   private detectBrowser(): BrowserInfo {
-    const ua = navigator.userAgent;
-    const platform = navigator.platform;
+    const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined' && typeof document !== 'undefined';
+    const ua = isBrowser ? navigator.userAgent : '';
+    const platform = isBrowser ? navigator.platform : 'server';
 
     // Detect browser name and version
     let name: BrowserInfo['name'] = 'Unknown';
@@ -228,8 +229,33 @@ export class BrowserCompatibilityManager {
     }
 
     // Detect mobile/tablet
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    const tablet = /iPad|Android(?=.*Tablet)|Tablet/i.test(ua);
+    const mobile = isBrowser && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const tablet = isBrowser && /iPad|Android(?=.*Tablet)|Tablet/i.test(ua);
+
+    if (!isBrowser) {
+      return {
+        name,
+        version,
+        engine,
+        platform,
+        mobile: false,
+        tablet: false,
+        touchSupport: false,
+        cookieSupport: false,
+        localStorageSupport: false,
+        sessionStorageSupport: false,
+        indexedDBSupport: false,
+        webGLSupport: false,
+        canvasSupport: false,
+        webAudioSupport: false,
+        webRTCSupport: false,
+        fullscreenSupport: false,
+        geolocationSupport: false,
+        notificationSupport: false,
+        serviceWorkerSupport: false,
+        webAssemblySupport: typeof WebAssembly !== 'undefined'
+      };
+    }
 
     return {
       name,
@@ -381,12 +407,13 @@ export class BrowserCompatibilityManager {
    */
   private getPlatformWarnings(): string[] {
     const warnings: string[] = [];
+    const isBrowser = typeof navigator !== 'undefined';
 
     if (this.browserInfo.mobile && !this.browserInfo.tablet) {
       warnings.push('Mobile phone detected - some features may be limited');
     }
 
-    if (/Windows NT 6\.[01]/.test(navigator.userAgent)) {
+    if (isBrowser && /Windows NT 6\.[01]/.test(navigator.userAgent)) {
       warnings.push('Older Windows version detected');
     }
 

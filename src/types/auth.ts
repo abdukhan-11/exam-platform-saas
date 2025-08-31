@@ -4,7 +4,6 @@ import { Session } from 'next-auth';
 // Ensure AppRole matches Prisma UserRole enum
 export enum AppRole {
   STUDENT = 'STUDENT',
-  TEACHER = 'TEACHER',
   COLLEGE_ADMIN = 'COLLEGE_ADMIN',
   SUPER_ADMIN = 'SUPER_ADMIN'
 }

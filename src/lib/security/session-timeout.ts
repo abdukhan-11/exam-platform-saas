@@ -6,7 +6,7 @@
  */
 
 export interface SessionTimeoutConfig {
-  role: 'SUPER_ADMIN' | 'COLLEGE_ADMIN' | 'TEACHER' | 'STUDENT';
+  role: 'SUPER_ADMIN' | 'COLLEGE_ADMIN' | 'STUDENT';
   defaultTimeout: number; // in minutes
   examTimeout: number; // in minutes
   warningThreshold: number; // in minutes before timeout
@@ -97,7 +97,7 @@ class SessionTimeoutService {
           absoluteTimeout: 480, // 8 hours
         },
         {
-          role: 'TEACHER',
+          role: 'COLLEGE_ADMIN',
           defaultTimeout: 180, // 3 hours
           examTimeout: 120, // 2 hours
           warningThreshold: 10, // 10 minutes

@@ -173,7 +173,7 @@ export async function POST(
           subjectId: existing.subjectId,
           collegeId: existing.collegeId,
           classId: existing.classId,
-          createdBy: currentUser.id,
+          createdById: currentUser.id,
           enableQuestionShuffling: existing.enableQuestionShuffling,
           enableTimeLimitPerQuestion: existing.enableTimeLimitPerQuestion,
           timeLimitPerQuestion: existing.timeLimitPerQuestion,

@@ -110,8 +110,7 @@ export function UserList({ collegeId }: UserListProps) {
         return 'bg-red-100 text-red-800';
       case UserRole.COLLEGE_ADMIN:
         return 'bg-blue-100 text-blue-800';
-      case UserRole.TEACHER:
-        return 'bg-green-100 text-green-800';
+      
       case UserRole.STUDENT:
         return 'bg-gray-100 text-gray-800';
       default:
@@ -191,7 +190,7 @@ export function UserList({ collegeId }: UserListProps) {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
                 <SelectItem value={UserRole.COLLEGE_ADMIN}>College Admin</SelectItem>
-                <SelectItem value={UserRole.TEACHER}>Teacher</SelectItem>
+                
                 <SelectItem value={UserRole.STUDENT}>Student</SelectItem>
               </SelectContent>
             </Select>

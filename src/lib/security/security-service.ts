@@ -451,32 +451,52 @@ class SecurityService {
     let score = 0;
 
     try {
-      // Get device fingerprint
-      const deviceInfo = await fingerprintService.getDeviceInfo();
+      // In server environments, avoid accessing browser APIs
+      const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined';
+
+      if (isBrowser) {
+        // Get detailed device fingerprint in the browser
+        const deviceInfo = await fingerprintService.getDeviceInfo();
       
-      // Check for device consistency (if we have stored fingerprint)
-      // This would require database integration in a real implementation
-      
-      // Basic device checks
-      if (deviceInfo.isMobile) {
-        details.push('Mobile device detected');
-        score += 10; // Slightly higher risk for mobile
-      }
+        // Basic device checks
+        if (deviceInfo.isMobile) {
+          details.push('Mobile device detected');
+          score += 10; // Slightly higher risk for mobile
+        }
 
-      if (deviceInfo.browserName === 'Unknown') {
-        details.push('Unknown browser detected');
-        score += 20;
-      }
+        if (deviceInfo.browserName === 'Unknown') {
+          details.push('Unknown browser detected');
+          score += 20;
+        }
 
-      // Check for suspicious browser characteristics
-      if (deviceInfo.fingerprint.webRTC === false) {
-        details.push('WebRTC disabled (potential privacy mode)');
-        score += 15;
-      }
+        // Check for suspicious browser characteristics
+        if (deviceInfo.fingerprint.webRTC === false) {
+          details.push('WebRTC disabled (potential privacy mode)');
+          score += 15;
+        }
 
-      if (deviceInfo.fingerprint.doNotTrack === '1') {
-        details.push('Do Not Track enabled');
-        score += 5;
+        if (deviceInfo.fingerprint.doNotTrack === '1') {
+          details.push('Do Not Track enabled');
+          score += 5;
+        }
+      } else {
+        // Server-side: derive limited device info from user agent only
+        const ua = context.userAgent || '';
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+        if (isMobileUA) {
+          details.push('Mobile device (UA)');
+          score += 10;
+        }
+
+        let browserName = 'Unknown';
+        if (ua.includes('Chrome')) browserName = 'Chrome';
+        else if (ua.includes('Firefox')) browserName = 'Firefox';
+        else if (ua.includes('Safari')) browserName = 'Safari';
+        else if (ua.includes('Edge')) browserName = 'Edge';
+        if (browserName === 'Unknown') {
+          details.push('Unknown browser (UA)');
+          score += 10;
+        }
       }
 
     } catch (error) {

@@ -10,10 +10,10 @@ import Link from 'next/link';
 export default function TeacherDashboard() {
   // TODO: Get from session/auth context
   const mockUserData = {
-    userRole: AppRole.TEACHER,
+    userRole: AppRole.COLLEGE_ADMIN,
     collegeName: "Sample College",
-    userName: "Teacher Name",
-    userEmail: "teacher@example.com"
+    userName: "Admin User",
+    userEmail: "admin@example.com"
   };
 
   return (

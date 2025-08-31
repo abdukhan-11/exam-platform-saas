@@ -95,9 +95,37 @@ export class DeviceCapabilityDetector {
       ...config
     };
 
-    this.hardwareCapabilities = this.detectHardwareCapabilities();
-    this.softwareCapabilities = this.detectSoftwareCapabilities();
-    this.performanceProfile = this.createPerformanceProfile();
+    const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined' && typeof document !== 'undefined';
+
+    if (isBrowser) {
+      this.hardwareCapabilities = this.detectHardwareCapabilities();
+      this.softwareCapabilities = this.detectSoftwareCapabilities();
+      this.performanceProfile = this.createPerformanceProfile();
+    } else {
+      // Server-safe defaults to avoid accessing browser APIs during SSR/build
+      this.hardwareCapabilities = {
+        cpu: { cores: 0, architecture: 'unknown', frequency: 0, vendor: 'Unknown' },
+        memory: { total: 0, available: 0, type: 'unknown' },
+        storage: { type: 'flash', size: 0, readSpeed: 0, writeSpeed: 0 },
+        gpu: { vendor: 'Unknown', model: 'Unknown', vram: 0, supportsWebGL: false, supportsWebGL2: false, maxTextureSize: 0, maxRenderbufferSize: 0 }
+      };
+
+      this.softwareCapabilities = {
+        browser: { name: 'Unknown', version: '0.0', engine: 'Unknown', userAgent: '' },
+        os: { name: 'Unknown', version: 'Unknown', architecture: 'Unknown' },
+        network: { type: 'unknown', speed: 'medium', latency: 0 },
+        battery: { supported: false, level: 100, charging: true }
+      };
+
+      this.performanceProfile = {
+        category: 'server-grade',
+        score: 50,
+        capabilities: [],
+        limitations: ['no-browser-apis'],
+        recommendedFeatures: [],
+        disabledFeatures: ['advanced-graphics', 'real-time-sync']
+      };
+    }
   }
 
   /**
@@ -256,6 +284,14 @@ export class DeviceCapabilityDetector {
    * Detect hardware capabilities
    */
   private detectHardwareCapabilities(): HardwareCapabilities {
+    if (typeof navigator === 'undefined' || typeof document === 'undefined') {
+      return {
+        cpu: { cores: 0, architecture: 'unknown', frequency: 0, vendor: 'Unknown' },
+        memory: { total: 0, available: 0, type: 'unknown' },
+        storage: { type: 'flash', size: 0, readSpeed: 0, writeSpeed: 0 },
+        gpu: { vendor: 'Unknown', model: 'Unknown', vram: 0, supportsWebGL: false, supportsWebGL2: false, maxTextureSize: 0, maxRenderbufferSize: 0 }
+      };
+    }
     return {
       cpu: {
         cores: navigator.hardwareConcurrency || 2,
@@ -290,6 +326,14 @@ export class DeviceCapabilityDetector {
    * Detect software capabilities
    */
   private detectSoftwareCapabilities(): SoftwareCapabilities {
+    if (typeof navigator === 'undefined') {
+      return {
+        browser: { name: 'Unknown', version: '0.0', engine: 'Unknown', userAgent: '' },
+        os: { name: 'Unknown', version: 'Unknown', architecture: 'Unknown' },
+        network: { type: 'unknown', speed: 'medium', latency: 0 },
+        battery: { supported: false, level: 100, charging: true }
+      };
+    }
     return {
       browser: {
         name: this.detectBrowserName(),
@@ -319,6 +363,16 @@ export class DeviceCapabilityDetector {
    * Create performance profile
    */
   private createPerformanceProfile(): PerformanceProfile {
+    if (typeof window === 'undefined') {
+      return {
+        category: 'server-grade',
+        score: 50,
+        capabilities: [],
+        limitations: ['no-browser-apis'],
+        recommendedFeatures: [],
+        disabledFeatures: ['advanced-graphics', 'real-time-sync']
+      };
+    }
     const hw = this.hardwareCapabilities;
     const sw = this.softwareCapabilities;
 

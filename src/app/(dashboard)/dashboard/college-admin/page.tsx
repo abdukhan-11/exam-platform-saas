@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CollegeDashboardLayout } from '@/components/layout/college-dashboard-layout';
 import { AppRole } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, GraduationCap, BookOpen, TrendingUp, UserPlus } from 'lucide-react';
@@ -178,33 +177,31 @@ export default function CollegeAdminDashboard() {
   };
 
   return (
-    <CollegeDashboardLayout {...mockUserData}>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {activeView === 'dashboard' && 'College Admin Dashboard'}
-              {activeView === 'students' && 'Student Management'}
-              {activeView === 'classes' && 'Class Management'}
-              {activeView === 'enrollment' && 'Student Enrollment'}
-            </h1>
-            <p className="text-muted-foreground">
-              {activeView === 'dashboard' && 'Manage your college operations, students, and academic programs'}
-              {activeView === 'students' && 'Manage student accounts, enrollments, and class assignments'}
-              {activeView === 'classes' && 'Create and manage classes, assign teachers, and track enrollments'}
-              {activeView === 'enrollment' && 'Manage student enrollments in classes and track enrollment status'}
-            </p>
-          </div>
-          {activeView !== 'dashboard' && (
-            <Button variant="outline" onClick={() => setActiveView('dashboard')}>
-              Back to Dashboard
-            </Button>
-          )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {activeView === 'dashboard' && 'College Admin Dashboard'}
+            {activeView === 'students' && 'Student Management'}
+            {activeView === 'classes' && 'Class Management'}
+            {activeView === 'enrollment' && 'Student Enrollment'}
+          </h1>
+          <p className="text-muted-foreground">
+            {activeView === 'dashboard' && 'Manage your college operations, students, and academic programs'}
+            {activeView === 'students' && 'Manage student accounts, enrollments, and class assignments'}
+            {activeView === 'classes' && 'Create and manage classes, assign teachers, and track enrollments'}
+            {activeView === 'enrollment' && 'Manage student enrollments in classes and track enrollment status'}
+          </p>
         </div>
-
-        {renderView()}
+        {activeView !== 'dashboard' && (
+          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
+            Back to Dashboard
+          </Button>
+        )}
       </div>
-    </CollegeDashboardLayout>
+
+      {renderView()}
+    </div>
   );
 }

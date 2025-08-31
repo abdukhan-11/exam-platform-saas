@@ -336,7 +336,7 @@ export function UserProfileForm({ userId, onSuccess, readOnly = false }: UserPro
       </Card>
 
       {/* Role-specific Fields */}
-      {profile.role === 'TEACHER' && (
+      {profile.role === 'COLLEGE_ADMIN' && (
         <Card>
           <CardHeader>
             <CardTitle>Teacher Information</CardTitle>

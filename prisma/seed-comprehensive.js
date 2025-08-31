@@ -23,17 +23,23 @@ async function main() {
     // Create Colleges
     const colleges = [];
     const collegeData = [
-      { code: 'COLL-001', name: 'Karachi University', city: 'Karachi', state: 'Sindh' },
-      { code: 'COLL-002', name: 'Lahore College', city: 'Lahore', state: 'Punjab' },
-      { code: 'COLL-003', name: 'Islamabad Institute', city: 'Islamabad', state: 'Federal' }
+      { code: 'COLL-001', name: 'Karachi University', city: 'Karachi', state: 'Sindh', username: 'karachi-university' },
+      { code: 'COLL-002', name: 'Lahore College', city: 'Lahore', state: 'Punjab', username: 'lahore-college' },
+      { code: 'COLL-003', name: 'Islamabad Institute', city: 'Islamabad', state: 'Federal', username: 'islamabad-institute' }
     ];
     
     for (const data of collegeData) {
       const college = await prisma.college.upsert({
         where: { code: data.code },
-        update: {},
+        update: {
+          username: data.username,
+        },
         create: {
-          ...data,
+          code: data.code,
+          name: data.name,
+          city: data.city,
+          state: data.state,
+          username: data.username,
           country: 'Pakistan',
           email: `info@${data.code.toLowerCase()}.edu`,
           website: `https://${data.code.toLowerCase()}.edu`,
@@ -51,7 +57,7 @@ async function main() {
       // College Admin
       const adminPassword = await bcrypt.hash('admin123', 10);
       const admin = await prisma.user.upsert({
-        where: { email: `admin@${college.code.toLowerCase()}.edu` },
+        where: { collegeId_email: { collegeId: college.id, email: `admin@${college.code.toLowerCase()}.edu` } },
         update: {},
         create: {
           name: `${college.name} Administrator`,
@@ -63,41 +69,27 @@ async function main() {
       });
       users.push(admin);
       
-      // Teachers (5 per college)
-      for (let i = 1; i <= 5; i++) {
-        const teacherPassword = await bcrypt.hash('teacher123', 10);
-        const teacher = await prisma.user.upsert({
-          where: { email: `teacher${i}@${college.code.toLowerCase()}.edu` },
-          update: {},
-          create: {
-            name: `Teacher ${i} - ${college.name}`,
-            email: `teacher${i}@${college.code.toLowerCase()}.edu`,
-            password: teacherPassword,
-            role: 'TEACHER',
-            collegeId: college.id,
-          },
-        });
-        users.push(teacher);
-      }
+      // No teacher users anymore - college admin handles teaching tasks
       
       // Students (20 per college)
       for (let i = 1; i <= 20; i++) {
         const studentPassword = await bcrypt.hash('student123', 10);
         const student = await prisma.user.upsert({
-          where: { email: `student${i}@${college.code.toLowerCase()}.edu` },
+          where: { collegeId_email: { collegeId: college.id, email: `student${i}@${college.code.toLowerCase()}.edu` } },
           update: {},
           create: {
             name: `Student ${i} - ${college.name}`,
             email: `student${i}@${college.code.toLowerCase()}.edu`,
             password: studentPassword,
             role: 'STUDENT',
+            rollNo: `${college.code}-${String(i).padStart(3, '0')}`,
             collegeId: college.id,
           },
         });
         users.push(student);
       }
       
-      console.log(`✅ Users created for ${college.name}: 1 admin, 5 teachers, 20 students`);
+      console.log(`✅ Users created for ${college.name}: 1 admin, 20 students`);
     }
     
     // Create Classes
@@ -169,7 +161,7 @@ async function main() {
     const exams = [];
     for (const college of colleges) {
       const collegeSubjects = subjects.filter(s => s.collegeId === college.id);
-      const collegeTeachers = users.filter(u => u.collegeId === college.id && u.role === 'TEACHER');
+      const collegeTeachers = users.filter(u => u.collegeId === college.id && u.role === 'COLLEGE_ADMIN');
       
       if (collegeSubjects.length > 0 && collegeTeachers.length > 0) {
         for (let i = 1; i <= 3; i++) {
@@ -191,7 +183,7 @@ async function main() {
               isPublished: true,
               subjectId: subject.id,
               collegeId: college.id,
-              createdBy: teacher.id,
+              createdById: teacher.id,
               enableQuestionShuffling: true,
               enableTimeLimitPerQuestion: false,
               enableBrowserLock: true,
@@ -220,7 +212,7 @@ async function main() {
           data: {
             text: `Question ${i}: This is a sample ${questionType.toLowerCase().replace('_', ' ')} question for ${exam.title}`,
             type: questionType,
-            options: questionType === 'MULTIPLE_CHOICE' ? JSON.stringify(['Option A', 'Option B', 'Option C', 'Option D']) : null,
+            options: questionType === 'MULTIPLE_CHOICE' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
             correctAnswer: questionType === 'TRUE_FALSE' ? 'TRUE' : questionType === 'MULTIPLE_CHOICE' ? 'Option A' : 'Sample answer',
             marks,
             difficulty: 'MEDIUM',
@@ -305,7 +297,7 @@ async function main() {
     
     // Create Teacher Assignments
     for (const classData of classes) {
-      const collegeTeachers = users.filter(u => u.collegeId === classData.collegeId && u.role === 'TEACHER');
+      const collegeTeachers = users.filter(u => u.collegeId === classData.collegeId && u.role === 'COLLEGE_ADMIN');
       const collegeSubjects = subjects.filter(s => s.collegeId === classData.collegeId);
       
       if (collegeTeachers.length > 0 && collegeSubjects.length > 0) {

@@ -34,7 +34,7 @@ export function BulkExportDialog({ open, onOpenChange, collegeId }: BulkExportDi
   const availableRoles = [
     { value: '', label: 'All Roles' },
     { value: UserRole.STUDENT, label: 'Students' },
-    { value: UserRole.TEACHER, label: 'Teachers' },
+    
     { value: UserRole.COLLEGE_ADMIN, label: 'College Admins' },
   ];
 

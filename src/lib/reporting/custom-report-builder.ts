@@ -259,7 +259,7 @@ export class CustomReportBuilder {
       // User fields
       { name: 'user.name', label: 'User Name', type: 'string', source: 'users', operators: ['equals', 'contains', 'starts_with', 'ends_with'] },
       { name: 'user.email', label: 'User Email', type: 'string', source: 'users', operators: ['equals', 'contains', 'starts_with', 'ends_with'] },
-      { name: 'user.role', label: 'User Role', type: 'enum', source: 'users', operators: ['equals', 'in'], enumValues: ['STUDENT', 'TEACHER', 'COLLEGE_ADMIN', 'SUPER_ADMIN'] },
+      { name: 'user.role', label: 'User Role', type: 'enum', source: 'users', operators: ['equals', 'in'], enumValues: ['STUDENT', 'COLLEGE_ADMIN', 'SUPER_ADMIN'] },
       { name: 'user.createdAt', label: 'Registration Date', type: 'date', source: 'users', operators: ['equals', 'greater_than', 'less_than', 'between'] },
       { name: 'user.lastLoginAt', label: 'Last Login', type: 'date', source: 'users', operators: ['equals', 'greater_than', 'less_than', 'between'] },
       

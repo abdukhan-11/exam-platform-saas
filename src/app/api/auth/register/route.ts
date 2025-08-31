@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     let result;
     
     // Validate role if provided
-    if (credentials.role && !['STUDENT', 'TEACHER', 'COLLEGE_ADMIN', 'SUPER_ADMIN'].includes(credentials.role)) {
+    if (credentials.role && !['STUDENT', 'COLLEGE_ADMIN', 'SUPER_ADMIN'].includes(credentials.role)) {
       return NextResponse.json(
         { error: 'Invalid role specified' },
         { status: 400 }

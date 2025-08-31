@@ -128,7 +128,7 @@ export const userRegistrationSchema = z.object({
     .min(8, 'Confirm password must be at least 8 characters'),
   
   // Role-specific fields
-  role: z.enum(['STUDENT', 'TEACHER'], {
+  role: z.enum(['STUDENT', 'COLLEGE_ADMIN'], {
     message: 'Please select a valid role'
   }),
   
@@ -154,7 +154,7 @@ export const userRegistrationSchema = z.object({
       message: 'Please enter a valid year (1, 2, 3, 4, First, Second, Third, Fourth)'
     }),
   
-  // Teacher-specific fields
+  // Admin-specific optional fields (formerly teacher)
   phone: z.string()
     .optional()
     .refine((val) => !val || commonPatterns.phone.test(val), {
@@ -190,18 +190,15 @@ export const userRegistrationSchema = z.object({
   message: 'Student fields are required for student role',
   path: ['role']
 }).refine((data) => {
-  // Teacher-specific validation
-  if (data.role === 'TEACHER') {
-    if (!data.phone || data.phone.trim() === '') {
-      return false;
-    }
-    if (!data.teacherDepartment || data.teacherDepartment.trim() === '') {
-      return false;
-    }
+  // College admin-specific validation (formerly teacher)
+  if ((data as any).role === 'COLLEGE_ADMIN') {
+    // Allow empty; if provided, they must be valid
+    if (data.phone && !commonPatterns.phone.test(data.phone)) return false;
+    if (data.teacherDepartment && data.teacherDepartment.length < 2) return false;
   }
   return true;
 }, {
-  message: 'Teacher fields are required for teacher role',
+  message: 'Admin fields invalid',
   path: ['role']
 });
 

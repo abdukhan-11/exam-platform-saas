@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 const bulkExportSchema = z.object({
   collegeId: z.string().optional(),
-  role: z.enum(['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT']).optional(),
+  role: z.enum(['SUPER_ADMIN', 'COLLEGE_ADMIN', 'STUDENT']).optional(),
   department: z.string().optional(),
   isActive: z.boolean().optional(),
   includeInactive: z.boolean().optional(),

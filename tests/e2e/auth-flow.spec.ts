@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Authentication Flow E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
+    await page.goto('/')
     // Clear session storage before each test
     await page.evaluate(() => {
       sessionStorage.clear()
@@ -135,6 +136,7 @@ test.describe('Authentication Flow E2E Tests', () => {
 
   test.describe('Login Flow', () => {
     test.beforeEach(async ({ page }) => {
+      await page.goto('/')
       // Set up college data in session storage
       await page.evaluate(() => {
         sessionStorage.setItem('selectedCollege', JSON.stringify({

@@ -212,6 +212,10 @@ class ExamSecurityService {
    * Initialize cross-platform compatibility and performance optimization
    */
   private async initializeCrossPlatformCompatibility(config: ExamSecurityConfig): Promise<void> {
+    // Server-side: skip browser-only initialization
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
     try {
       // Initialize browser compatibility manager
       await browserCompatibilityManager.initialize();
@@ -1269,6 +1273,9 @@ class ExamSecurityService {
    * Start advanced security monitoring
    */
   private startAdvancedSecurityMonitoring(examKey: string, config: ExamSecurityConfig): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
     const interval = setInterval(async () => {
       const status = this.securityStatus.get(examKey);
       if (!status || !status.isActive) {
@@ -1310,6 +1317,9 @@ class ExamSecurityService {
    * Detect screen recording software
    */
   private async detectScreenRecording(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
     try {
       // Check MediaDevices API for screen sharing
       if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
@@ -1403,6 +1413,9 @@ class ExamSecurityService {
    * Monitor network activity
    */
   private async monitorNetworkActivity(examKey: string, config: ExamSecurityConfig): Promise<void> {
+    if (typeof window === 'undefined') {
+      return;
+    }
     try {
       // Check for VPN/Proxy indicators
       const isVpnDetected = await this.detectVPN();
@@ -1440,6 +1453,9 @@ class ExamSecurityService {
    * Detect VPN usage
    */
   private async detectVPN(): Promise<boolean> {
+    if (typeof window === 'undefined') {
+      return false;
+    }
     try {
       // Check WebRTC IP leakage
       if (window.RTCPeerConnection) {
@@ -1514,6 +1530,9 @@ class ExamSecurityService {
    * Monitor external requests
    */
   private monitorExternalRequests(examKey: string, config: ExamSecurityConfig): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
     // Store original methods
     const originalXMLHttpRequest = window.XMLHttpRequest;
     const originalFetch = window.fetch;

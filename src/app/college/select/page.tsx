@@ -158,9 +158,10 @@ export default function CollegeSelectionPage() {
                     placeholder="e.g., greenfield_college"
                     value={collegeUsername}
                     onChange={(e) => setCollegeUsername(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !validationError && handleCollegeSearch()}
+                    onKeyDown={(e) => e.key === 'Enter' && !validationError && handleCollegeSearch()}
                     className={`pr-10 ${validationError ? 'border-red-500' : ''} ${college ? 'border-green-500' : ''}`}
                     disabled={isLoading}
+                    data-testid="college-username"
                   />
                   {collegeUsername.length >= 3 && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -211,7 +212,7 @@ export default function CollegeSelectionPage() {
               <CardHeader>
                 <CardTitle className="text-green-600 flex items-center space-x-2">
                   <Check className="w-5 h-5" />
-                  <span>College Found: {college.name}</span>
+                  <span>{`✓ College Found: ${college.name}`}</span>
                 </CardTitle>
                 <CardDescription>
                   Choose how you want to access the platform

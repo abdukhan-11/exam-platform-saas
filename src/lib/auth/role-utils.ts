@@ -9,9 +9,8 @@ import { AppRole } from '@/types/auth';
 export function hasRole(userRole: AppRole, requiredRole: AppRole): boolean {
   const roleHierarchy: Record<AppRole, number> = {
     [AppRole.STUDENT]: 1,
-    [AppRole.TEACHER]: 2,
-    [AppRole.COLLEGE_ADMIN]: 3,
-    [AppRole.SUPER_ADMIN]: 4,
+    [AppRole.COLLEGE_ADMIN]: 2,
+    [AppRole.SUPER_ADMIN]: 3,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
@@ -45,9 +44,8 @@ export function hasAllRoles(userRole: AppRole, requiredRoles: AppRole[]): boolea
 export function getHighestRole(roles: AppRole[]): AppRole {
   const roleHierarchy: Record<AppRole, number> = {
     [AppRole.STUDENT]: 1,
-    [AppRole.TEACHER]: 2,
-    [AppRole.COLLEGE_ADMIN]: 3,
-    [AppRole.SUPER_ADMIN]: 4,
+    [AppRole.COLLEGE_ADMIN]: 2,
+    [AppRole.SUPER_ADMIN]: 3,
   };
 
   return roles.reduce((highest, current) => 
@@ -78,9 +76,7 @@ export function isCollegeAdmin(role: AppRole): boolean {
  * @param role The role to check
  * @returns True if the role is a teacher or higher
  */
-export function isTeacher(role: AppRole): boolean {
-  return hasRole(role, AppRole.TEACHER);
-}
+// isTeacher removed; teacher privileges are now college admin
 
 /**
  * Check if a role is a student role

@@ -166,11 +166,12 @@ export async function guardCollegeAdmin(req: NextRequest) {
 }
 
 export async function guardTeacher(req: NextRequest) {
-  return guardRole(req, [AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
+  // Teacher functionality is now handled by College Admin and Super Admin
+  return guardRole(req, [AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
 }
 
 export async function guardStudent(req: NextRequest) {
-  return guardRole(req, [AppRole.STUDENT, AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
+  return guardRole(req, [AppRole.STUDENT, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]);
 }
 
 // Enhanced middleware with endpoint-specific permission checking

@@ -3,9 +3,11 @@ let sentry: any = null;
 
 try {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    // Dynamically import to avoid build errors when not configured
+    // Dynamically require via variable to avoid static bundler resolution when package isn't installed
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require('@sentry/nextjs');
+    const moduleName = '@sentry/nextjs';
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Sentry = require(moduleName);
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),

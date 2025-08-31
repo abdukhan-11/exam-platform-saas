@@ -24,154 +24,158 @@ model SuperAdmin {
 }
 
 model College {
+  id                 String    @id @default(cuid())
+  name               String
+  username           String    @unique // College username for authentication
+  code               String    @unique // College code for identification
+  address            String?
+  city               String?
+  state              String?
+  country            String    @default("Pakistan")
+  phone              String?
+  email              String?
+  website            String?
+  subscriptionStatus String    @default("TRIAL") // TRIAL, ACTIVE, EXPIRED
+  subscriptionExpiry DateTime?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  users               User[]
+  subjects            Subject[]
+  exams               Exam[]
+  classes             Class[]
+  events              Event[]
+  studentProfiles     StudentProfile[]
+  notifications       Notification[]
+  eventSubscriptions  EventSubscription[]
+  eventReminders      EventReminder[]
+  userInvitations     UserInvitation[]
+  emailLogs           EmailLog[]
+  gradeBoundaries     GradeBoundary[]
+  studentExamAttempts StudentExamAttempt[]
+  studentAnswers      StudentAnswer[]
+
+  @@index([isActive])
+  @@index([subscriptionStatus])
+  @@index([username])
+  @@map("college")
+}
+
+model User {
   id          String   @id @default(cuid())
   name        String
-  username    String   @unique // College username for authentication
-  code        String   @unique // College code for identification
-  address     String?
-  city        String?
-  state       String?
-  country     String   @default("Pakistan")
-  phone       String?
-  email       String?
-  website     String?
-  subscriptionStatus String @default("TRIAL") // TRIAL, ACTIVE, EXPIRED
-  subscriptionExpiry DateTime?
+  firstName   String?
+  lastName    String?
+  email       String
+  rollNo      String? // Student roll number (unique per college)
+  password    String
+  role        UserRole @default(STUDENT)
   isActive    Boolean  @default(true)
+  collegeId   String?
+  department  String? // Department or major
+  position    String? // Job position or title
+  phone       String? // Phone number
+  bio         String? // User bio/description
+  avatar      String? // Profile image URL
+  preferences Json? // User preferences as JSON
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  users       User[]
-  subjects    Subject[]
-  exams       Exam[]
-  classes     Class[]
-  events      Event[]
-  studentProfiles StudentProfile[]
-  notifications Notification[]
-  eventSubscriptions EventSubscription[]
-  eventReminders EventReminder[]
-  userInvitations UserInvitation[]
-  emailLogs   EmailLog[]
-  gradeBoundaries GradeBoundary[]
+  college             College?                 @relation(fields: [collegeId], references: [id])
+  examResults         ExamResult[]
+  refreshTokens       RefreshToken[]
+  recoveryRequests    RecoveryRequest[]
+  enrollments         Enrollment[]
+  studentProfile      StudentProfile?
+  attempts            StudentExamAttempt[]
+  createdExams        Exam[]
+  teacherAssignments  TeacherClassAssignment[]
+  notifications       Notification[]
+  eventSubscriptions  EventSubscription[]
+  eventReminders      EventReminder[]
+  activityLogs        ActivityLog[]
+  emailLogs           EmailLog[]
+  sentInvitations     UserInvitation[]         @relation("Inviter")
+  acceptedInvitations UserInvitation[]         @relation("Accepter")
 
-  @@map("college")
-  @@index([isActive])
-  @@index([subscriptionStatus])
-  @@index([username])
-}
-
-model User {
-  id         String   @id @default(cuid())
-  name       String
-  firstName  String?
-  lastName   String?
-  email      String   @unique
-  rollNo     String?  // Student roll number (unique per college)
-  password   String
-  role       UserRole @default(STUDENT)
-  isActive   Boolean  @default(true)
-  collegeId  String?
-  department String?  // Department or major
-  position   String?  // Job position or title
-  phone      String?  // Phone number
-  bio        String?  // User bio/description
-  avatar     String?  // Profile image URL
-  preferences Json?   // User preferences as JSON
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  college      College?     @relation(fields: [collegeId], references: [id])
-  examResults  ExamResult[]
-  refreshTokens RefreshToken[]
-  recoveryRequests RecoveryRequest[]
-  enrollments  Enrollment[]
-  studentProfile StudentProfile?
-  attempts     StudentExamAttempt[]
-  teacherAssignments TeacherClassAssignment[]
-  notifications Notification[]
-  eventSubscriptions EventSubscription[]
-  eventReminders EventReminder[]
-  activityLogs ActivityLog[]
-  emailLogs    EmailLog[]
-  sentInvitations UserInvitation[] @relation("Inviter")
-  acceptedInvitations UserInvitation[] @relation("Accepter")
-
-  @@map("user")
+  @@unique([collegeId, rollNo]) // Roll number unique per college
+  @@unique([collegeId, email])
   @@index([collegeId])
   @@index([role])
   @@index([isActive])
   @@index([email])
   @@index([rollNo])
-  @@unique([collegeId, rollNo]) // Roll number unique per college
+  @@map("user")
 }
 
 model Subject {
-  id        String   @id @default(cuid())
-  name      String
-  code      String
-  description String?
-  credits   Int      @default(3)
-  isActive  Boolean  @default(true)
-  collegeId String
-  classId   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  college College @relation(fields: [collegeId], references: [id])
-  class   Class?  @relation(fields: [classId], references: [id])
-  exams   Exam[]
-  events  Event[]
-  teacherAssignments TeacherClassAssignment[]
-
-  @@unique([collegeId, code])
-  @@map("subject")
-  @@index([collegeId])
-  @@index([classId])
-  @@index([isActive])
-}
-
-model Exam {
   id          String   @id @default(cuid())
-  title       String
+  name        String
+  code        String
   description String?
-  duration    Int      // in minutes
-  totalMarks  Int
-  passingMarks Int
-  startTime   DateTime
-  endTime     DateTime
+  credits     Int      @default(3)
   isActive    Boolean  @default(true)
-  isPublished Boolean  @default(false)
-  subjectId   String
   collegeId   String
   classId     String?
-  createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relations
+  college            College                  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  class              Class?                   @relation(fields: [classId], references: [id])
+  exams              Exam[]
+  events             Event[]
+  teacherAssignments TeacherClassAssignment[]
+
+  @@unique([collegeId, code])
+  @@index([collegeId])
+  @@index([classId])
+  @@index([isActive])
+  @@map("subject")
+}
+
+model Exam {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  duration     Int // in minutes
+  totalMarks   Int
+  passingMarks Int
+  startTime    DateTime
+  endTime      DateTime
+  isActive     Boolean  @default(true)
+  isPublished  Boolean  @default(false)
+  subjectId    String
+  collegeId    String
+  classId      String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   // Anti-cheating features
-  enableQuestionShuffling Boolean @default(true)
+  enableQuestionShuffling    Boolean @default(true)
   enableTimeLimitPerQuestion Boolean @default(false)
-  timeLimitPerQuestion Int? // in seconds
-  enableBrowserLock Boolean @default(true)
-  enableFullscreenMode Boolean @default(true)
-  enableWebcamMonitoring Boolean @default(false)
-  enableScreenRecording Boolean @default(false)
-  maxAttempts Int @default(1)
-  allowRetakes Boolean @default(false)
-  retakeDelayHours Int @default(24)
+  timeLimitPerQuestion       Int? // in seconds
+  enableBrowserLock          Boolean @default(true)
+  enableFullscreenMode       Boolean @default(true)
+  enableWebcamMonitoring     Boolean @default(false)
+  enableScreenRecording      Boolean @default(false)
+  maxAttempts                Int     @default(1)
+  allowRetakes               Boolean @default(false)
+  retakeDelayHours           Int     @default(24)
 
   // Relations
-  subject     Subject      @relation(fields: [subjectId], references: [id])
-  college     College      @relation(fields: [collegeId], references: [id])
-  class       Class?       @relation(fields: [classId], references: [id])
+  subject     Subject              @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  college     College              @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  class       Class?               @relation(fields: [classId], references: [id])
   questions   Question[]
   examResults ExamResult[]
   attempts    StudentExamAttempt[]
+  createdBy   User                 @relation(fields: [createdById], references: [id])
 
-  @@map("exam")
   @@index([collegeId])
   @@index([subjectId])
   @@index([classId])
@@ -179,73 +183,74 @@ model Exam {
   @@index([endTime])
   @@index([isActive])
   @@index([isPublished])
+  @@map("exam")
 }
 
 model Question {
-  id          String   @id @default(cuid())
-  text        String
-  type        QuestionType
-  options     String?  // JSON string for multiple choice
+  id            String             @id @default(cuid())
+  text          String
+  type          QuestionType
+  options       Json? // JSON for multiple choice options
   correctAnswer String
-  marks       Int
-  difficulty  QuestionDifficulty @default(MEDIUM)
-  explanation String?
-  examId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  marks         Int
+  difficulty    QuestionDifficulty @default(MEDIUM)
+  explanation   String?
+  examId        String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   // Relations
-  exam Exam @relation(fields: [examId], references: [id])
+  exam            Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
   questionOptions QuestionOption[]
   answers         StudentAnswer[]
 
-  @@map("question")
   @@index([examId])
   @@index([type])
   @@index([difficulty])
+  @@map("question")
 }
 
 model QuestionOption {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   questionId String
   text       String
-  isCorrect  Boolean  @default(false)
-  order      Int      @default(0)
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
 
   // Relations
-  question Question @relation(fields: [questionId], references: [id])
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
   answers  StudentAnswer[]
 
-  @@map("question_option")
   @@index([questionId])
   @@index([isCorrect])
+  @@map("question_option")
 }
 
 model ExamResult {
-  id        String   @id @default(cuid())
-  userId    String
-  examId    String
-  score     Int
-  totalMarks Int
-  percentage Float
-  grade      String?
-  startTime DateTime
-  endTime   DateTime?
-  isCompleted Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  examId      String
+  score       Int
+  totalMarks  Int
+  percentage  Float
+  grade       String?
+  startTime   DateTime
+  endTime     DateTime?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
-  exam Exam @relation(fields: [examId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   @@unique([userId, examId])
-  @@map("exam_result")
   @@index([userId])
   @@index([examId])
   @@index([score])
   @@index([percentage])
   @@index([isCompleted])
+  @@map("exam_result")
 }
 
 /// Grading boundaries for converting percentages to grade letters.
@@ -264,80 +269,80 @@ model GradeBoundary {
   // Relations
   college College? @relation(fields: [collegeId], references: [id])
 
-  @@map("grade_boundary")
   @@index([collegeId])
   @@index([isDefault])
   @@index([minPercentage])
   @@index([maxPercentage])
+  @@map("grade_boundary")
 }
 
 model Class {
-  id        String   @id @default(cuid())
-  name      String
-  description String?
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
   academicYear String
-  collegeId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  collegeId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  college     College  @relation(fields: [collegeId], references: [id])
-  enrollments Enrollment[]
-  subjects    Subject[]
-  exams       Exam[]
-  events      Event[]
+  college            College                  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  enrollments        Enrollment[]
+  subjects           Subject[]
+  exams              Exam[]
+  events             Event[]
   teacherAssignments TeacherClassAssignment[]
 
   @@unique([collegeId, name, academicYear])
-  @@map("class")
   @@index([collegeId])
   @@index([academicYear])
+  @@map("class")
 }
 
 model Enrollment {
-  id        String   @id @default(cuid())
-  userId    String
-  classId   String
-  enrollmentDate DateTime @default(now())
-  status    EnrollmentStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
+  id             String           @id @default(cuid())
+  userId         String
+  classId        String
+  enrollmentDate DateTime         @default(now())
+  status         EnrollmentStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
 
   // Relations
-  user  User  @relation(fields: [userId], references: [id])
-  class Class @relation(fields: [classId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   @@unique([userId, classId])
-  @@map("enrollment")
   @@index([userId])
   @@index([classId])
   @@index([status])
   @@index([enrollmentDate])
+  @@map("enrollment")
 }
 
 model TeacherClassAssignment {
-  id        String   @id @default(cuid())
-  teacherId String
-  classId   String
-  subjectId String
+  id         String   @id @default(cuid())
+  teacherId  String
+  classId    String
+  subjectId  String
   assignedAt DateTime @default(now())
-  isActive  Boolean @default(true)
+  isActive   Boolean  @default(true)
 
   // Relations
-  teacher User @relation(fields: [teacherId], references: [id])
-  class   Class @relation(fields: [classId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, classId, subjectId])
-  @@map("teacher_class_assignment")
   @@index([teacherId])
   @@index([classId])
   @@index([subjectId])
   @@index([isActive])
+  @@map("teacher_class_assignment")
 }
 
 model StudentProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
+  id              String    @id @default(cuid())
+  userId          String    @unique
   collegeId       String
   rollNo          String
   fatherName      String?
@@ -347,105 +352,110 @@ model StudentProfile {
   address         String?
   phone           String?
   profileImageUrl String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  college College @relation(fields: [collegeId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
 
   @@unique([collegeId, rollNo])
-  @@map("student_profile")
   @@index([collegeId])
   @@index([rollNo])
   @@index([gender])
+  @@map("student_profile")
 }
 
 model StudentExamAttempt {
-  id         String   @id @default(cuid())
-  userId     String
-  examId     String
-  startedAt  DateTime @default(now())
-  endedAt    DateTime?
-  score      Int      @default(0)
-  totalMarks Int      @default(0)
-  isCompleted Boolean @default(false)
-  
+  id          String    @id @default(cuid())
+  userId      String
+  examId      String
+  collegeId   String
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  score       Int       @default(0)
+  totalMarks  Int       @default(0)
+  isCompleted Boolean   @default(false)
+
   // Anti-cheating tracking
-  ipAddress  String?
-  userAgent  String?
+  ipAddress          String?
+  userAgent          String?
   browserFingerprint String?
   suspiciousActivity Boolean @default(false)
-  activityLog String? // JSON string of suspicious activities
-  violationCount Int @default(0)
+  activityLog        String? // JSON string of suspicious activities
+  violationCount     Int     @default(0)
 
   // Relations
-  user    User @relation(fields: [userId], references: [id])
-  exam    Exam @relation(fields: [examId], references: [id])
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam    Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  college College         @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   answers StudentAnswer[]
 
   @@unique([userId, examId])
-  @@map("student_exam_attempt")
   @@index([userId])
   @@index([examId])
+  @@index([collegeId])
   @@index([startedAt])
   @@index([endedAt])
   @@index([score])
   @@index([isCompleted])
   @@index([suspiciousActivity])
   @@index([violationCount])
+  @@map("student_exam_attempt")
 }
 
 model StudentAnswer {
-  id              String   @id @default(cuid())
-  attemptId       String
-  questionId      String
+  id               String   @id @default(cuid())
+  attemptId        String
+  questionId       String
   selectedOptionId String?
-  answerText      String?
-  isCorrect       Boolean  @default(false)
-  marksAwarded    Int      @default(0)
-  timeSpent       Int?     // in seconds
-  answeredAt      DateTime @default(now())
+  answerText       String?
+  isCorrect        Boolean  @default(false)
+  marksAwarded     Int      @default(0)
+  timeSpent        Int? // in seconds
+  answeredAt       DateTime @default(now())
+  collegeId        String
 
   // Relations
-  attempt StudentExamAttempt @relation(fields: [attemptId], references: [id])
-  question Question           @relation(fields: [questionId], references: [id])
-  selectedOption QuestionOption? @relation(fields: [selectedOptionId], references: [id])
+  attempt        StudentExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption QuestionOption?    @relation(fields: [selectedOptionId], references: [id])
+  college        College            @relation(fields: [collegeId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
-  @@map("student_answer")
   @@index([attemptId])
   @@index([questionId])
+  @@index([collegeId])
   @@index([isCorrect])
   @@index([marksAwarded])
   @@index([answeredAt])
+  @@map("student_answer")
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  type        EventType
-  scheduledAt DateTime
-  endDateTime DateTime?
-  priority    EventPriority @default(MEDIUM)
-  isRecurring Boolean @default(false)
+  id                String        @id @default(cuid())
+  title             String
+  description       String?
+  type              EventType
+  scheduledAt       DateTime
+  endDateTime       DateTime?
+  priority          EventPriority @default(MEDIUM)
+  isRecurring       Boolean       @default(false)
   recurrencePattern String? // Cron expression or recurrence rule
-  collegeId   String
-  classId     String?
-  subjectId   String?
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  collegeId         String
+  classId           String?
+  subjectId         String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   // Relations
-  college College @relation(fields: [collegeId], references: [id])
-  class   Class?  @relation(fields: [classId], references: [id])
-  subject Subject? @relation(fields: [subjectId], references: [id])
-  notifications Notification[]
+  college        College         @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  class          Class?          @relation(fields: [classId], references: [id])
+  subject        Subject?        @relation(fields: [subjectId], references: [id])
+  notifications  Notification[]
   eventReminders EventReminder[]
 
-  @@map("event")
   @@index([collegeId])
   @@index([classId])
   @@index([subjectId])
@@ -453,10 +463,11 @@ model Event {
   @@index([type])
   @@index([priority])
   @@index([isActive])
+  @@map("event")
 }
 
 model Notification {
-  id              String   @id @default(cuid())
+  id              String              @id @default(cuid())
   userId          String
   eventId         String?
   title           String
@@ -464,24 +475,23 @@ model Notification {
   messageTemplate String? // Template identifier for dynamic content
   type            NotificationType
   channel         NotificationChannel
-  status          NotificationStatus @default(PENDING)
+  status          NotificationStatus  @default(PENDING)
   sentAt          DateTime?
   deliveredAt     DateTime?
   readAt          DateTime?
-  retryCount      Int      @default(0)
-  maxRetries      Int      @default(3)
+  retryCount      Int                 @default(0)
+  maxRetries      Int                 @default(3)
   failureReason   String?
   metadata        Json? // Additional data for the notification
   collegeId       String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
-  event Event? @relation(fields: [eventId], references: [id])
-  college College @relation(fields: [collegeId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
 
-  @@map("notification")
   @@index([userId])
   @@index([eventId])
   @@index([type])
@@ -490,59 +500,60 @@ model Notification {
   @@index([collegeId])
   @@index([sentAt])
   @@index([deliveredAt])
+  @@map("notification")
 }
 
 model EventSubscription {
-  id              String   @id @default(cuid())
-  userId          String
-  eventType       EventType
+  id                  String              @id @default(cuid())
+  userId              String
+  eventType           EventType
   notificationChannel NotificationChannel
-  isActive        Boolean  @default(true)
-  preferences     Json? // User preferences for notifications
-  optOutTypes     String? // JSON string of EventType[] - event types user doesn't want notifications for
-  collegeId       String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isActive            Boolean             @default(true)
+  preferences         Json? // User preferences for notifications
+  optOutTypes         Json? // JSON array of EventType values user opts out of
+  collegeId           String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
-  college College @relation(fields: [collegeId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventType, notificationChannel, collegeId])
-  @@map("event_subscription")
   @@index([userId])
   @@index([eventType])
   @@index([notificationChannel])
   @@index([isActive])
   @@index([collegeId])
+  @@map("event_subscription")
 }
 
 model EventReminder {
-  id              String   @id @default(cuid())
+  id              String       @id @default(cuid())
   eventId         String
   userId          String
   reminderTime    DateTime
-  leadTime        Int      @default(15) // Minutes before event
-  isSent          Boolean  @default(false)
+  leadTime        Int          @default(15) // Minutes before event
+  isSent          Boolean      @default(false)
   sentAt          DateTime?
   reminderType    ReminderType @default(EMAIL)
-  escalationLevel Int      @default(1)
-  maxEscalations  Int      @default(3)
+  escalationLevel Int          @default(1)
+  maxEscalations  Int          @default(3)
   collegeId       String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   // Relations
-  event Event @relation(fields: [eventId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-  college College @relation(fields: [collegeId], references: [id])
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
 
-  @@map("event_reminder")
   @@index([eventId])
   @@index([userId])
   @@index([reminderTime])
   @@index([isSent])
   @@index([collegeId])
+  @@map("event_reminder")
 }
 
 model RefreshToken {
@@ -555,104 +566,103 @@ model RefreshToken {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("refresh_token")
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
   @@index([revoked])
+  @@map("refresh_token")
 }
 
 model RecoveryRequest {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  type      String   // PASSWORD_RESET, ACCOUNT_RECOVERY, EMAIL_VERIFICATION
-  token     String   @unique
+  type      String // PASSWORD_RESET, ACCOUNT_RECOVERY, EMAIL_VERIFICATION
+  token     String    @unique
   expiresAt DateTime
-  used      Boolean  @default(false)
+  used      Boolean   @default(false)
   usedAt    DateTime?
   ipAddress String?
   userAgent String?
   metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("recovery_request")
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
   @@index([used])
   @@index([type])
+  @@map("recovery_request")
 }
 
 model UserInvitation {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   email           String
   role            UserRole
   collegeId       String
   invitedBy       String
-  invitationToken String   @unique
+  invitationToken String           @unique
   expiresAt       DateTime
   status          InvitationStatus @default(PENDING)
   acceptedAt      DateTime?
   acceptedBy      String?
   cancelledAt     DateTime?
   cancelledBy     String?
-  resendCount     Int      @default(0)
+  resendCount     Int              @default(0)
   lastResentAt    DateTime?
   customMessage   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   // Relations
-  college College @relation(fields: [collegeId], references: [id])
-  inviter User @relation("Inviter", fields: [invitedBy], references: [id])
-  accepter User? @relation("Accepter", fields: [acceptedBy], references: [id])
+  college  College @relation(fields: [collegeId], references: [id])
+  inviter  User    @relation("Inviter", fields: [invitedBy], references: [id])
+  accepter User?   @relation("Accepter", fields: [acceptedBy], references: [id])
 
-  @@map("user_invitation")
   @@index([email])
   @@index([collegeId])
   @@index([invitationToken])
   @@index([status])
   @@index([expiresAt])
   @@index([invitedBy])
+  @@map("user_invitation")
 }
 
 model EmailLog {
-  id              String   @id @default(cuid())
-  to              String
-  from            String
-  subject         String
-  template        String?  // Template used (e.g., "invitation", "password-reset")
-  status          EmailStatus @default(PENDING)
-  sentAt          DateTime?
-  deliveredAt     DateTime?
-  openedAt        DateTime?
-  clickedAt       DateTime?
-  bouncedAt       DateTime?
-  failedAt        DateTime?
-  failureReason   String?
-  retryCount      Int      @default(0)
-  maxRetries      Int      @default(3)
-  messageId       String?  // Provider message ID
-  provider        String   @default("smtp") // smtp, sendgrid, etc.
-  metadata        Json?    // Additional provider-specific data
-  collegeId       String?
-  userId          String?  // User who triggered the email
-  ipAddress       String?
-  userAgent       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String      @id @default(cuid())
+  to            String
+  from          String
+  subject       String
+  template      String? // Template used (e.g., "invitation", "password-reset")
+  status        EmailStatus @default(PENDING)
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  bouncedAt     DateTime?
+  failedAt      DateTime?
+  failureReason String?
+  retryCount    Int         @default(0)
+  maxRetries    Int         @default(3)
+  messageId     String? // Provider message ID
+  provider      String      @default("smtp") // smtp, sendgrid, etc.
+  metadata      Json? // Additional provider-specific data
+  collegeId     String?
+  userId        String? // User who triggered the email
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   // Relations
-  user User? @relation(fields: [userId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
   college College? @relation(fields: [collegeId], references: [id])
 
-  @@map("email_log")
   @@index([to])
   @@index([status])
   @@index([template])
@@ -660,28 +670,28 @@ model EmailLog {
   @@index([collegeId])
   @@index([userId])
   @@index([createdAt])
+  @@map("email_log")
 }
 
 model ActivityLog {
-  id          String   @id @default(cuid())
-  userId      String
-  sessionId   String?
-  action      String   // e.g., "LOGIN", "LOGOUT", "CREATE_USER", "UPDATE_PROFILE"
-  resource    String?  // e.g., "USER", "EXAM", "CLASS"
-  resourceId  String?  // ID of the affected resource
-  details     Json?    // Additional details about the action
-  ipAddress   String?
-  userAgent   String?
-  location    String?  // Geolocation data
-  riskScore   Float?   // Security risk assessment score
-  metadata    Json?    // Additional metadata
-  collegeId   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  sessionId  String?
+  action     String // e.g., "LOGIN", "LOGOUT", "CREATE_USER", "UPDATE_PROFILE"
+  resource   String? // e.g., "USER", "EXAM", "CLASS"
+  resourceId String? // ID of the affected resource
+  details    Json? // Additional details about the action
+  ipAddress  String?
+  userAgent  String?
+  location   String? // Geolocation data
+  riskScore  Float? // Security risk assessment score
+  metadata   Json? // Additional metadata
+  collegeId  String?
+  createdAt  DateTime @default(now())
 
   // Relations
   user User @relation(fields: [userId], references: [id])
 
-  @@map("activity_log")
   @@index([userId])
   @@index([sessionId])
   @@index([action])
@@ -691,13 +701,13 @@ model ActivityLog {
   @@index([collegeId])
   @@index([createdAt])
   @@index([riskScore])
+  @@map("activity_log")
 }
 
 // Enums
 enum UserRole {
   SUPER_ADMIN
   COLLEGE_ADMIN
-  TEACHER
   STUDENT
 }
 

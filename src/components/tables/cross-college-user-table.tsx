@@ -85,14 +85,14 @@ interface CrossCollegeUserTableProps {
 const roleColors = {
   SUPER_ADMIN: 'bg-red-100 text-red-800',
   COLLEGE_ADMIN: 'bg-blue-100 text-blue-800',
-  TEACHER: 'bg-green-100 text-green-800',
+  // TEACHER removed
   STUDENT: 'bg-gray-100 text-gray-800'
 };
 
 const roleLabels = {
   SUPER_ADMIN: 'Super Admin',
   COLLEGE_ADMIN: 'College Admin',
-  TEACHER: 'Teacher',
+  // TEACHER removed
   STUDENT: 'Student'
 };
 

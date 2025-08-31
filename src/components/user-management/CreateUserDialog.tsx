@@ -48,7 +48,6 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
 
   const availableRoles = [
     { value: UserRole.STUDENT, label: 'Student' },
-    { value: UserRole.TEACHER, label: 'Teacher' },
     { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
     { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
   ];
@@ -61,7 +60,7 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
     if (session?.user.role === UserRole.COLLEGE_ADMIN) {
       return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
     }
-    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+    return role.value === UserRole.STUDENT; // No teacher role anymore
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +110,7 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess, collegeId }: C
   };
 
   const isStudentRole = formData.role === UserRole.STUDENT;
-  const isTeacherOrAdminRole = ([UserRole.TEACHER, UserRole.COLLEGE_ADMIN, UserRole.SUPER_ADMIN] as UserRole[]).includes(formData.role);
+  const isTeacherOrAdminRole = ([UserRole.COLLEGE_ADMIN, UserRole.SUPER_ADMIN] as UserRole[]).includes(formData.role);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

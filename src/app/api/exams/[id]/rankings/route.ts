@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/nextauth-options'
 import { db } from '@/lib/db'
@@ -6,15 +6,16 @@ import { PermissionService, Permission } from '@/lib/user-management/permissions
 import { getExamRanking } from '@/lib/exams/ranking'
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const currentUser = session.user as any
 
-    const exam = await db.exam.findUnique({ where: { id: params.id }, select: { id: true, collegeId: true } })
+    const { id } = await params
+    const exam = await db.exam.findUnique({ where: { id }, select: { id: true, collegeId: true } })
     if (!exam) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     if (!PermissionService.hasAnyPermission(currentUser.role, [Permission.READ_EXAM, Permission.READ_ANALYTICS])) {

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
 import { AutomatedReportService } from '@/lib/reporting/automated-report-service';
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { format, filters, customFields, includeCharts } = body;
 
@@ -52,8 +52,8 @@ export async function POST(
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and authorization
@@ -67,7 +67,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'csv';
     const filters = searchParams.get('filters') ? JSON.parse(searchParams.get('filters')!) : {};

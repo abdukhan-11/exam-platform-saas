@@ -1,90 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/nextauth-options';
-import { prisma } from '@/lib/db';
+import { AppRole, UserSession } from '@/types/auth';
+import { hasAnyRole } from '@/lib/auth/utils';
+import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession(authOptions) as UserSession | null;
+    if (!session?.user?.role || !hasAnyRole(session.user.role, [AppRole.SUPER_ADMIN])) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
-    // Check if user is super admin
-    if (session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 });
+    const body = await request.json().catch(() => ({}));
+    const action = body.action as string;
+    const collegeIds = Array.isArray(body.collegeIds) ? body.collegeIds as string[] : [];
+
+    if (!action || collegeIds.length === 0) {
+      return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
     }
 
-    const { action, collegeIds } = await request.json();
-
-    if (!action || !collegeIds || !Array.isArray(collegeIds) || collegeIds.length === 0) {
-      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
+    if (!['activate', 'deactivate', 'delete'].includes(action)) {
+      return NextResponse.json({ message: 'Unsupported action' }, { status: 400 });
     }
 
-    let result;
-    let message;
+    if (action === 'delete') {
+      // Prevent deleting colleges with dependent users
+      const counts = await db.user.groupBy({
+        by: ['collegeId'],
+        where: { collegeId: { in: collegeIds } },
+        _count: { _all: true },
+      });
+      const blocked = new Set(counts.filter(c => c._count._all > 0).map(c => c.collegeId as string));
+      const allowedToDelete = collegeIds.filter(id => !blocked.has(id));
 
-    switch (action) {
-      case 'activate':
-        result = await prisma.college.updateMany({
-          where: { id: { in: collegeIds } },
-          data: { isActive: true }
-        });
-        message = `Activated ${result.count} colleges`;
-        break;
+      if (allowedToDelete.length > 0) {
+        await db.college.deleteMany({ where: { id: { in: allowedToDelete } } });
+      }
 
-      case 'deactivate':
-        result = await prisma.college.updateMany({
-          where: { id: { in: collegeIds } },
-          data: { isActive: false }
-        });
-        message = `Deactivated ${result.count} colleges`;
-        break;
+      const blockedCount = collegeIds.length - allowedToDelete.length;
+      if (blockedCount > 0) {
+        return NextResponse.json({
+          message: `Deleted ${allowedToDelete.length} colleges. ${blockedCount} could not be deleted due to dependencies.`,
+          deleted: allowedToDelete.length,
+          blocked: blockedCount,
+        }, { status: 207 });
+      }
 
-      case 'delete':
-        // For deletion, we need to handle related data carefully
-        // First, check if any colleges have active users or exams
-        const collegesWithData = await prisma.college.findMany({
-          where: { id: { in: collegeIds } },
-          include: {
-            users: { take: 1 },
-            exams: { take: 1 }
-          }
-        });
-
-        const collegesWithActiveData = collegesWithData.filter(
-          (college: any) => college.users.length > 0 || college.exams.length > 0
-        );
-
-        if (collegesWithActiveData.length > 0) {
-          return NextResponse.json({
-            error: 'Cannot delete colleges with active users or exams',
-            colleges: collegesWithActiveData.map((c: any) => ({ id: c.id, name: c.name }))
-          }, { status: 400 });
-        }
-
-        result = await prisma.college.deleteMany({
-          where: { id: { in: collegeIds } }
-        });
-        message = `Deleted ${result.count} colleges`;
-        break;
-
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+      return NextResponse.json({ message: `Deleted ${allowedToDelete.length} colleges.` });
     }
 
-    return NextResponse.json({
-      success: true,
-      message,
-      count: result.count
-    });
-
+    // Activate / Deactivate
+    const isActive = action === 'activate';
+    await db.college.updateMany({ where: { id: { in: collegeIds } }, data: { isActive } });
+    return NextResponse.json({ message: `Updated ${collegeIds.length} colleges.` });
   } catch (error) {
-    console.error('Bulk action error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Failed to perform bulk action' }, { status: 500 });
   }
 }

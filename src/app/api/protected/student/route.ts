@@ -30,5 +30,5 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const GET = withRole(handler, [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER, AppRole.STUDENT]);
+export const GET = withRole(handler, [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.STUDENT]);
 

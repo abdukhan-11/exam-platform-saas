@@ -35,15 +35,12 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (currentUser.role === 'TEACHER') {
+    // Former teacher check now applies to college admin
+    if (currentUser.role === 'COLLEGE_ADMIN') {
       const hasAssignment = await db.teacherClassAssignment.findFirst({
         where: { teacherId: currentUser.id, subjectId: subject.id, isActive: true },
       });
       if (!hasAssignment) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    } else if (currentUser.role === 'COLLEGE_ADMIN') {
-      if (subject.collegeId !== currentUser.collegeId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -79,7 +76,7 @@ export async function PUT(
     if (currentUser.role === 'COLLEGE_ADMIN' && subject.collegeId !== currentUser.collegeId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (currentUser.role === 'TEACHER') {
+    if (currentUser.role !== 'COLLEGE_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -135,7 +132,7 @@ export async function DELETE(
     if (currentUser.role === 'COLLEGE_ADMIN' && subject.collegeId !== currentUser.collegeId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (currentUser.role === 'TEACHER') {
+    if (currentUser.role !== 'COLLEGE_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

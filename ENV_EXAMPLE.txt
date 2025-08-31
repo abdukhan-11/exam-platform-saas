@@ -1,0 +1,30 @@
+# Database connection (PostgreSQL)
+# Format: postgres://USER:PASSWORD@HOST:PORT/DBNAME?schema=public
+DATABASE_URL=
+
+# Shadow database (used by Prisma Migrate)
+# Use a separate database to avoid data loss during schema diffs
+SHADOW_DATABASE_URL=
+
+# Node environment
+NODE_ENV=development
+
+# Optional DB pool tuning (used by prisma/config.ts)
+DATABASE_MAX_CONNECTIONS=10
+DATABASE_MIN_CONNECTIONS=2
+DATABASE_CONNECTION_TIMEOUT=30000
+DATABASE_IDLE_TIMEOUT=60000
+DATABASE_MAX_LIFETIME=300000
+
+# Multi-tenant config defaults
+ENABLE_AUTO_COLLEGE_FILTER=false
+MULTI_TENANT_STRICT_MODE=false
+DEFAULT_COLLEGE_ID=
+
+# Monitoring flags
+ENABLE_DB_METRICS=false
+DB_METRICS_INTERVAL=60000
+ENABLE_CONNECTION_POOL_METRICS=false
+
+# Security
+MAX_QUERY_EXECUTION_TIME=30000

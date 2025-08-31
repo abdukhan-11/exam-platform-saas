@@ -47,6 +47,7 @@ export async function POST(
       create: {
         userId: currentUser.id,
         examId: id,
+        collegeId: exam.collegeId,
         startedAt: new Date()
       }
     });

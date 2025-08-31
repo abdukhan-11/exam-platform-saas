@@ -85,9 +85,9 @@ export async function initializeSocketServer(httpServer: HTTPServer): Promise<So
 
   examMonitoringNamespace.on('connection', async (socket: Socket) => {
     const userId = socket.data.userId;
-    console.log(`👨‍🏫 Teacher ${userId} connected to exam monitoring`);
+    console.log(`👨‍🏫 Admin ${userId} connected to exam monitoring`);
 
-    // Join teacher's monitoring room
+    // Join admin's monitoring room
     socket.join(`teacher_${userId}`);
 
     // Handle exam monitoring subscription
@@ -104,12 +104,12 @@ export async function initializeSocketServer(httpServer: HTTPServer): Promise<So
           return;
         }
 
-        // Check if user is a teacher/admin with access to this exam
+        // Check if user is an admin with access to this exam
         const user = await db.user.findUnique({
           where: { id: userId }
         });
 
-        if (!user || (user.role !== 'TEACHER' && user.role !== 'COLLEGE_ADMIN' && user.role !== 'SUPER_ADMIN')) {
+        if (!user || (user.role !== 'COLLEGE_ADMIN' && user.role !== 'SUPER_ADMIN')) {
           socket.emit('error', { message: 'Unauthorized' });
           return;
         }
@@ -120,7 +120,7 @@ export async function initializeSocketServer(httpServer: HTTPServer): Promise<So
         }
 
         socket.join(`exam_${examId}`);
-        console.log(`👨‍🏫 Teacher ${userId} subscribed to exam ${examId}`);
+        console.log(`👨‍🏫 Admin ${userId} subscribed to exam ${examId}`);
 
         // Send current exam status
         const currentStatus = await examSessionManager.getExamStatus(examId);
@@ -133,7 +133,7 @@ export async function initializeSocketServer(httpServer: HTTPServer): Promise<So
     });
 
     socket.on('disconnect', () => {
-      console.log(`👨‍🏫 Teacher ${userId} disconnected from exam monitoring`);
+      console.log(`👨‍🏫 Admin ${userId} disconnected from exam monitoring`);
     });
   });
 

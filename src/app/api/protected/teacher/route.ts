@@ -18,7 +18,7 @@ async function handler(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       role: token?.role,
-      message: 'Teacher access granted',
+      message: 'College admin access granted',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -30,5 +30,5 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const GET = withRole(handler, [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER]);
+export const GET = withRole(handler, [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN]);
 

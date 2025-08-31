@@ -17,7 +17,7 @@ export function hasRole(userRole: AppRole, requiredRole: AppRole): boolean {
   const roleHierarchy: Record<AppRole, number> = {
     SUPER_ADMIN: 5,
     COLLEGE_ADMIN: 3,
-    TEACHER: 2,
+    
     STUDENT: 1,
   };
 
@@ -48,7 +48,7 @@ export function getRoleName(role: AppRole): string {
   const roleNames: Record<AppRole, string> = {
     SUPER_ADMIN: 'Super Admin',
     COLLEGE_ADMIN: 'College Admin',
-    TEACHER: 'Teacher',
+    
     STUDENT: 'Student',
   };
 

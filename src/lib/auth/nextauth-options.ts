@@ -4,7 +4,6 @@ import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from '../db';
 import { verifyPassword } from './password';
 import { UserJWT, AppRole, isValidRole } from '../../types/auth';
-import { UserRole } from '@prisma/client';
 import { env } from '../env';
 
 export const authOptions: NextAuthOptions = {
@@ -33,12 +32,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // First resolve college
-          const college = await prisma.college.findUnique({
-            where: { 
+          // First resolve college (use findFirst to allow additional filters)
+          const college = await prisma.college.findFirst({
+            where: {
               username: credentials.collegeUsername,
-              isActive: true 
-            }
+              isActive: true,
+            },
           });
 
           if (!college) {
@@ -55,14 +54,15 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (user && (await verifyPassword(credentials.password, user.password))) {
-            // Validate role before returning
-            if (isValidRole(user.role) && (user.role === 'TEACHER' || user.role === 'COLLEGE_ADMIN')) {
+            // Validate role before returning (COLLEGE_ADMIN only)
+            if (isValidRole(user.role) && (user.role === 'COLLEGE_ADMIN')) {
               return { 
                 id: user.id, 
                 name: user.name, 
                 email: user.email, 
                 role: user.role as AppRole, 
                 collegeId: user.collegeId, 
+                position: user.position, // Include position to distinguish admin vs teacher
                 image: null
               };
             }
@@ -201,7 +201,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'google') {
         // For Google OAuth, we might need to create or find the user
         // This is a simplified version - you might want to enhance this
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await prisma.user.findFirst({
           where: { email: token.email! },
         });
         
@@ -218,7 +218,7 @@ export const authOptions: NextAuthOptions = {
               name: token.name!,
               email: token.email!,
               password: '', // Google users don't have passwords
-              role: UserRole.STUDENT, // Default role
+              role: 'STUDENT' as AppRole, // Default role
               isActive: true,
             },
           });
@@ -240,6 +240,7 @@ export const authOptions: NextAuthOptions = {
           customUser.role = token.role as AppRole;
         }
         customUser.collegeId = token.collegeId as string | undefined;
+        customUser.position = token.position as string | undefined; // Include position in session
         
         // Add additional security metadata
         customUser.sessionId = token.jti; // JWT ID for session tracking

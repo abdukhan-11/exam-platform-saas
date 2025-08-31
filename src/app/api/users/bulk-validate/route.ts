@@ -9,7 +9,7 @@ const bulkValidateSchema = z.object({
   users: z.array(z.object({
     email: z.string().email(),
     name: z.string().min(2).max(100),
-    role: z.enum(['SUPER_ADMIN', 'COLLEGE_ADMIN', 'TEACHER', 'STUDENT']),
+    role: z.enum(['SUPER_ADMIN', 'COLLEGE_ADMIN', 'STUDENT']),
     department: z.string().optional(),
     position: z.string().optional(),
     phone: z.string().optional(),

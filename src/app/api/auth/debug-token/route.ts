@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Validate role
-    const validRoles: AppRole[] = [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.TEACHER, AppRole.STUDENT];
+    const validRoles: AppRole[] = [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.STUDENT];
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         error: 'Invalid role specified',

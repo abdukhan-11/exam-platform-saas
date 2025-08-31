@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
       tests: {
         superAdminAccess: hasAnyRole(userRole, [AppRole.SUPER_ADMIN]),
         collegeAdminAccess: hasAnyRole(userRole, [AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]),
-        teacherAccess: hasAnyRole(userRole, [AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]),
-        studentAccess: hasAnyRole(userRole, [AppRole.STUDENT, AppRole.TEACHER, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]),
+        teacherAccess: hasAnyRole(userRole, [AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]),
+        studentAccess: hasAnyRole(userRole, [AppRole.STUDENT, AppRole.COLLEGE_ADMIN, AppRole.SUPER_ADMIN]),
       },
       permissions: getRolePermissions(userRole),
       message: 'RBAC test completed successfully'
@@ -128,40 +128,7 @@ function getRolePermissions(role: AppRole) {
         'College Analytics'
       ]
     },
-    [AppRole.TEACHER]: {
-      description: 'Subject and exam management access',
-      actions: [
-        'Read assigned subject information',
-        'Create, read, update, delete exams for assigned subjects',
-        'Create, read, update, delete questions for assigned subjects',
-        'View student results for assigned subjects',
-        'Update student grades and feedback'
-      ],
-      restrictions: 'Limited to assigned subjects and students only',
-      dataAccess: [
-        'Assigned subjects',
-        'Subject exams',
-        'Subject questions',
-        'Enrolled students',
-        'Student results',
-        'Exam analytics'
-      ],
-      apiEndpoints: [
-        '/api/subjects/{subjectId}',
-        '/api/exams/subject/*',
-        '/api/questions/subject/*',
-        '/api/results/subject/*',
-        '/api/teacher/*'
-      ],
-      uiComponents: [
-        'Teacher Dashboard',
-        'Subject Overview',
-        'Exam Creator',
-        'Question Manager',
-        'Student Results',
-        'Exam Analytics'
-      ]
-    },
+    
     [AppRole.STUDENT]: {
       description: 'Personal exam and result access',
       actions: [

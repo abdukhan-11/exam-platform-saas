@@ -88,7 +88,7 @@ class ViolationIntegrationService {
    */
   private initializeIntegration(): void {
     // Initialize all services
-    if (this.config.enableEvidenceCollection) {
+    if (this.config.enableEvidenceCollection && typeof window !== 'undefined') {
       evidenceCollectionService.initialize();
     }
 
@@ -258,7 +258,7 @@ class ViolationIntegrationService {
   private startQueueProcessing(): void {
     setInterval(() => {
       if (!this.isProcessing && this.processingQueue.length > 0) {
-        this.processQueue();
+        void this.processQueue();
       }
     }, 5000); // Check every 5 seconds
   }

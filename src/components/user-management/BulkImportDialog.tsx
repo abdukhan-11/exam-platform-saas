@@ -50,7 +50,6 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
 
   const availableRoles = [
     { value: UserRole.STUDENT, label: 'Student' },
-    { value: UserRole.TEACHER, label: 'Teacher' },
     { value: UserRole.COLLEGE_ADMIN, label: 'College Admin' },
     { value: UserRole.SUPER_ADMIN, label: 'Super Admin' },
   ];
@@ -63,7 +62,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
     if (session?.user.role === UserRole.COLLEGE_ADMIN) {
       return role.value !== UserRole.SUPER_ADMIN; // College admin can't assign super admin
     }
-    return role.value === UserRole.STUDENT || role.value === UserRole.TEACHER; // Teachers can only assign student/teacher
+    return role.value === UserRole.STUDENT; // No teacher role anymore
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,7 +160,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
         window.URL.revokeObjectURL(url);
       } else {
         // Fallback to local template
-        const template = 'email,name,role,department,position,phone,studentId,year,major,isActive\n"john.doe@example.com","John Doe","STUDENT","Computer Science","Student","+1234567890","STU001","2","Computer Science","true"\n"jane.smith@example.com","Jane Smith","TEACHER","Mathematics","Professor","+1234567891","","","","true"';
+        const template = 'email,name,role,department,position,phone,studentId,year,major,isActive\n"john.doe@example.com","John Doe","STUDENT","Computer Science","Student","+1234567890","STU001","2","Computer Science","true"\n"jane.smith@example.com","Jane Smith","COLLEGE_ADMIN","Mathematics","Professor","+1234567891","","","","true"';
         const blob = new Blob([template], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -248,7 +247,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess, collegeId }: B
                   <ul className="mt-1 list-disc list-inside space-y-1">
                     <li>First column: Email (required)</li>
                     <li>Second column: Name (required)</li>
-                    <li>Third column: Role (required: SUPER_ADMIN, COLLEGE_ADMIN, TEACHER, STUDENT)</li>
+                    <li>Third column: Role (required: SUPER_ADMIN, COLLEGE_ADMIN, STUDENT)</li>
                     <li>Fourth column: Department (optional)</li>
                     <li>Fifth column: Position (optional)</li>
                     <li>Sixth column: Phone (optional)</li>

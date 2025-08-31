@@ -101,43 +101,7 @@ export const rbacConfig: RBACConfig = {
     ]
   },
 
-  [AppRole.TEACHER]: {
-    description: 'Subject and exam management access',
-    actions: [
-      'Read assigned subject information',
-      'Create, read, update, delete exams for assigned subjects',
-      'Create, read, update, delete questions for assigned subjects',
-      'View student results for assigned subjects',
-      'Update student grades and feedback',
-      'Schedule exams',
-      'View exam analytics',
-      'Manage question banks'
-    ],
-    restrictions: 'Limited to assigned subjects and students only',
-    dataAccess: [
-      'Assigned subjects',
-      'Subject exams',
-      'Subject questions',
-      'Enrolled students',
-      'Student results',
-      'Exam analytics'
-    ],
-    apiEndpoints: [
-      '/api/subjects/{subjectId}',
-      '/api/exams/subject/*',
-      '/api/questions/subject/*',
-      '/api/results/subject/*',
-      '/api/teacher/*'
-    ],
-    uiComponents: [
-      'Teacher Dashboard',
-      'Subject Overview',
-      'Exam Creator',
-      'Question Manager',
-      'Student Results',
-      'Exam Analytics'
-    ]
-  },
+  // AppRole.TEACHER removed – capabilities merged into COLLEGE_ADMIN
 
   [AppRole.STUDENT]: {
     description: 'Personal exam and result access',
@@ -190,9 +154,8 @@ export function getRolePermissions(role: AppRole): RolePermission {
 
 export function hasPermission(userRole: AppRole, requiredRole: AppRole): boolean {
   const roleHierarchy: Record<AppRole, number> = {
-    [AppRole.SUPER_ADMIN]: 4,
-    [AppRole.COLLEGE_ADMIN]: 3,
-    [AppRole.TEACHER]: 2,
+    [AppRole.SUPER_ADMIN]: 3,
+    [AppRole.COLLEGE_ADMIN]: 2,
     [AppRole.STUDENT]: 1
   };
 
