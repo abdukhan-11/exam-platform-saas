@@ -45,6 +45,7 @@ Thumbs.db
 .turbo/
 .swc/
 .cache/
+.npm-cache/
 
 # Testing/coverage
 coverage/

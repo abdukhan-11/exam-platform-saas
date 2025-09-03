@@ -6,9 +6,12 @@ import { UserRole } from '@prisma/client';
 
 export async function registerUser(credentials: RegisterCredentials): Promise<AuthResponse> {
   try {
-    // Check if user already exists
-    const existingUser = await db.user.findUnique({
-      where: { email: credentials.email },
+    // Check if user already exists (need collegeId for unique constraint)
+    const existingUser = await db.user.findFirst({
+      where: { 
+        email: credentials.email,
+        collegeId: credentials.collegeId 
+      },
     });
 
     if (existingUser) {
@@ -68,9 +71,12 @@ export async function registerUser(credentials: RegisterCredentials): Promise<Au
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    // Try to find user first
-    const user = await db.user.findUnique({
-      where: { email: credentials.email },
+    // Try to find user first (need collegeId for unique constraint)
+    const user = await db.user.findFirst({
+      where: { 
+        email: credentials.email,
+        collegeId: credentials.collegeId 
+      },
     });
 
     let role: AppRole = (user?.role as AppRole) || 'STUDENT';

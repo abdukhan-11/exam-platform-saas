@@ -51,6 +51,7 @@ export interface AuthError {
 export interface LoginCredentials {
   email: string;
   password: string;
+  collegeId?: string;
 }
 
 export interface StudentLoginCredentials {

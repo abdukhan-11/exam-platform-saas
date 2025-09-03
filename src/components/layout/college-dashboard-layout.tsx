@@ -128,7 +128,7 @@ export function CollegeDashboardLayout({ children, userRole, collegeName, userNa
 
         <aside 
           className={`
-            fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+            fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex-shrink-0
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}
           aria-label="Main navigation"
@@ -151,7 +151,7 @@ export function CollegeDashboardLayout({ children, userRole, collegeName, userNa
           </Button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2" role="navigation" aria-label="Dashboard navigation">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" role="navigation" aria-label="Dashboard navigation">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;

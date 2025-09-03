@@ -50,9 +50,12 @@ import {
   Eye,
   GraduationCap,
   Users,
-  Calendar
+  Calendar,
+  LogIn
 } from 'lucide-react';
 import { AppRole } from '@/types/auth';
+import { useRouter } from 'next/navigation';
+import { setImpersonationData } from '@/utils/impersonation';
 
 interface Student {
   id: string;
@@ -102,6 +105,7 @@ export function StudentManagement() {
   const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   // Mock data for demonstration
   useEffect(() => {
@@ -231,6 +235,18 @@ export function StudentManagement() {
     a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleViewAsStudent = async (student: Student) => {
+    try {
+      // Store impersonation data using utility function
+      setImpersonationData(student);
+      
+      // Redirect to student dashboard
+      router.push('/dashboard/student');
+    } catch (error) {
+      console.error('Failed to view as student:', error);
+    }
   };
 
   if (isLoading) {
@@ -476,6 +492,10 @@ export function StudentManagement() {
                         <DropdownMenuItem>
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewAsStudent(student)}>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          View as Student
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 

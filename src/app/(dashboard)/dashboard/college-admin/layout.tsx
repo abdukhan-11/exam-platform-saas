@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Home, Users, GraduationCap, BookOpen, Calendar, BarChart3, Settings, X, Menu, Sun, Moon, Bell, User, LogOut } from 'lucide-react';
+import { Home, Users, GraduationCap, BookOpen, Calendar, BarChart3, Settings, X, Menu, Sun, Moon, Bell, User, LogOut, Shield, CalendarDays } from 'lucide-react';
 import { useTheme } from '@/components/providers/theme-provider';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -15,18 +15,23 @@ interface CollegeAdminLayoutProps {
 
 const navigationItems = [
   { href: '/dashboard/college-admin', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/college-admin/students', label: 'Students', icon: Users },
-  { href: '/dashboard/college-admin/classes', label: 'Classes', icon: GraduationCap },
-  { href: '/dashboard/college-admin/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/dashboard/college-admin/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/dashboard/college-admin/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/dashboard/college-admin/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/college-admin/students', label: 'Student Management', icon: Users },
+  { href: '/dashboard/college-admin/classes', label: 'Class Management', icon: GraduationCap },
+  { href: '/dashboard/college-admin/subjects', label: 'Subject Management', icon: BookOpen },
+  { href: '/dashboard/college-admin/exams', label: 'Exam/Test Creation', icon: Calendar },
+  { href: '/dashboard/college-admin/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/dashboard/college-admin/reports', label: 'Reports & Awards', icon: BarChart3 },
+  { href: '/dashboard/college-admin/security', label: 'Security & Monitoring', icon: Shield },
+  { href: '/dashboard/college-admin/settings', label: 'College Settings', icon: Settings },
 ];
 
-export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps) {
+function CollegeAdminLayoutContent({ children }: CollegeAdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const qs = searchParams?.toString() || '';
+  const querySuffix = qs ? `?${qs}` : '';
   const { data: session } = useSession();
 
   const user = session?.user as any;
@@ -68,7 +73,7 @@ export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps
         aria-label="Main navigation"
       >
         <div className="flex h-16 items-center justify-between px-6 border-b">
-          <Link href="/dashboard/college-admin" className="flex items-center space-x-2">
+          <Link href={`/dashboard/college-admin${querySuffix}`} className="flex items-center space-x-2">
             <GraduationCap className="h-8 w-8 text-primary" />
             <div className="flex flex-col">
               <span className="text-xl font-bold">Exam SaaS</span>
@@ -93,7 +98,7 @@ export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={`${item.href}${querySuffix}`}
                 className={`
                   flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
                   ${isActive 
@@ -141,7 +146,7 @@ export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps
               </Button>
               
               <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Link href="/dashboard/college-admin" className="hover:text-foreground">
+                <Link href={`/dashboard/college-admin${querySuffix}`} className="hover:text-foreground">
                   College Admin
                 </Link>
                 {pathname !== '/dashboard/college-admin' && (
@@ -188,9 +193,11 @@ export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps
                     {user?.email || 'admin@example.com'}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/college-admin/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
@@ -212,5 +219,13 @@ export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps
         </main>
       </div>
     </div>
+  );
+}
+
+export default function CollegeAdminLayout({ children }: CollegeAdminLayoutProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CollegeAdminLayoutContent>{children}</CollegeAdminLayoutContent>
+    </Suspense>
   );
 }

@@ -15,6 +15,8 @@ const createExamSchema = z.object({
   endTime: z.string().datetime(),
   subjectId: z.string(),
   classId: z.string().optional(),
+  isActive: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
   // Anti-cheating flags
   enableQuestionShuffling: z.boolean().optional(),
   enableTimeLimitPerQuestion: z.boolean().optional(),
@@ -63,10 +65,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Session in exam creation:', session);
+    
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const currentUser = session.user as any;
+    console.log('Current user in exam creation:', currentUser);
 
     if (!PermissionService.hasAnyPermission(currentUser.role, [Permission.CREATE_EXAM])) {
+      console.log('Permission check failed for role:', currentUser.role);
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -105,7 +111,9 @@ export async function POST(req: NextRequest) {
         endTime: end,
         subjectId: parsed.subjectId,
         collegeId: subject.collegeId,
-        classId: parsed.classId,
+        classId: parsed.classId || null,
+        isActive: parsed.isActive ?? true,
+        isPublished: parsed.isPublished ?? false,
         enableQuestionShuffling: parsed.enableQuestionShuffling ?? true,
         enableTimeLimitPerQuestion: parsed.enableTimeLimitPerQuestion ?? false,
         timeLimitPerQuestion: parsed.timeLimitPerQuestion,
@@ -116,7 +124,7 @@ export async function POST(req: NextRequest) {
         maxAttempts: parsed.maxAttempts ?? 1,
         allowRetakes: parsed.allowRetakes ?? false,
         retakeDelayHours: parsed.retakeDelayHours ?? 24,
-        createdBy: currentUser.id,
+        createdById: currentUser.id,
       },
     });
 

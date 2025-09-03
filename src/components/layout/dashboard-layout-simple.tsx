@@ -73,10 +73,11 @@ export function DashboardLayoutSimple({ children }: DashboardLayoutProps) {
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex-shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      `}
+      aria-label="Dashboard navigation">
         <div className="flex h-16 items-center justify-between px-6 border-b">
           <Link href="/dashboard/superadmin" className="flex items-center space-x-2">
             <GraduationCap className="h-8 w-8 text-primary" />
@@ -92,7 +93,7 @@ export function DashboardLayoutSimple({ children }: DashboardLayoutProps) {
           </Button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" role="navigation" aria-label="Dashboard navigation">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -102,20 +103,22 @@ export function DashboardLayoutSimple({ children }: DashboardLayoutProps) {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                  flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
                   ${isActive 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }
                 `}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={`Navigate to ${item.label}`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
-      </div>
+      </aside>
 
       {/* Main content */}
       <div className="lg:pl-64">

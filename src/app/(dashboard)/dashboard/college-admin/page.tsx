@@ -9,16 +9,18 @@ import { StudentManagement } from '@/components/user-management/StudentManagemen
 import { ClassManagement } from '@/components/user-management/ClassManagement';
 import { StudentEnrollment } from '@/components/user-management/StudentEnrollment';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function CollegeAdminDashboard() {
   const [activeView, setActiveView] = useState<'dashboard' | 'students' | 'classes' | 'enrollment'>('dashboard');
   
-  // TODO: Get from session/auth context
-  const mockUserData = {
-    userRole: AppRole.COLLEGE_ADMIN,
-    collegeName: "Sample College",
-    userName: "Admin User",
-    userEmail: "admin@example.com"
+  // Get user data from session/auth context
+  const { data: session } = useSession();
+  const userData = {
+    userRole: session?.user?.role || AppRole.COLLEGE_ADMIN,
+    collegeName: "Your College", // TODO: Get from college data using collegeId
+    userName: session?.user?.name || "Admin User",
+    userEmail: session?.user?.email || "admin@example.com"
   };
 
   const renderView = () => {
@@ -111,9 +113,11 @@ export default function CollegeAdminDashboard() {
                   <p className="text-sm text-muted-foreground mb-3">
                     View performance metrics and reports
                   </p>
-                  <Button size="sm" className="w-full" variant="outline">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    View Reports
+                  <Button size="sm" className="w-full" variant="outline" asChild>
+                    <Link href="/dashboard/college-admin/reports">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      View Reports
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>

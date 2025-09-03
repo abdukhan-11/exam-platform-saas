@@ -571,6 +571,7 @@ export class DeviceCapabilityDetector {
 
   private detectGPUVendor(): string {
     try {
+      if (typeof document === 'undefined') return 'unknown';
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl) {
@@ -590,6 +591,7 @@ export class DeviceCapabilityDetector {
 
   private detectGPUModel(): string {
     try {
+      if (typeof document === 'undefined') return 'unknown';
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl) {
@@ -611,6 +613,7 @@ export class DeviceCapabilityDetector {
 
   private checkWebGLSupport(): boolean {
     try {
+      if (typeof document === 'undefined') return false;
       const canvas = document.createElement('canvas');
       return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
     } catch {
@@ -620,6 +623,7 @@ export class DeviceCapabilityDetector {
 
   private checkWebGL2Support(): boolean {
     try {
+      if (typeof document === 'undefined') return false;
       const canvas = document.createElement('canvas');
       return !!canvas.getContext('webgl2');
     } catch {
@@ -629,6 +633,7 @@ export class DeviceCapabilityDetector {
 
   private getMaxTextureSize(): number {
     try {
+      if (typeof document === 'undefined') return 0;
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl) {
@@ -642,6 +647,7 @@ export class DeviceCapabilityDetector {
 
   private getMaxRenderbufferSize(): number {
     try {
+      if (typeof document === 'undefined') return 0;
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl) {
@@ -799,6 +805,10 @@ export class DeviceCapabilityDetector {
 
   private async benchmarkRenderPerformance(): Promise<number> {
     return new Promise((resolve) => {
+      if (typeof document === 'undefined') {
+        resolve(0);
+        return;
+      }
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {

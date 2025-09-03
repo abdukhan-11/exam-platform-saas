@@ -60,9 +60,14 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Session in exam update:', session);
+    
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const currentUser = session.user as any;
+    console.log('Current user in exam update:', currentUser);
+    
     if (!PermissionService.hasAnyPermission(currentUser.role, [Permission.UPDATE_EXAM])) {
+      console.log('Permission check failed for role:', currentUser.role);
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -193,7 +198,7 @@ export async function POST(
             data: {
               text: q.text,
               type: q.type,
-              options: q.options,
+              options: q.options || undefined,
               correctAnswer: q.correctAnswer,
               marks: q.marks,
               difficulty: q.difficulty,

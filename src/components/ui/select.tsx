@@ -164,13 +164,15 @@ SelectItem.displayName = "SelectItem"
 
 const SelectValue = React.forwardRef<HTMLSpanElement, SelectValueProps>(
   ({ placeholder, children, ...props }, ref) => {
+    const { value } = React.useContext(SelectContext)
+    
     return (
       <span
         ref={ref}
         className="block truncate"
         {...props}
       >
-        {children || placeholder}
+        {children || value || placeholder}
       </span>
     )
   }

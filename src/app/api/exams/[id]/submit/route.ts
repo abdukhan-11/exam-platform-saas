@@ -57,12 +57,17 @@ export async function POST(
 
     const percentage = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
 
+    // Calculate grade using the grading system
+    const { resolveGradeByPercentage } = await import('@/lib/exams/grading');
+    const gradeResult = await resolveGradeByPercentage(percentage, exam.collegeId);
+
     await db.examResult.upsert({
       where: { userId_examId: { userId: currentUser.id, examId: params.id } },
       update: {
         score,
         totalMarks,
         percentage,
+        grade: gradeResult.grade,
         isCompleted: true,
         endTime: new Date(),
       },
@@ -72,21 +77,83 @@ export async function POST(
         score,
         totalMarks,
         percentage,
+        grade: gradeResult.grade,
         isCompleted: true,
         startTime: new Date(),
         endTime: new Date(),
       }
     });
 
-    await db.studentExamAttempt.update({
+    // Update or create student exam attempt
+    const attempt = await db.studentExamAttempt.upsert({
       where: { userId_examId: { userId: currentUser.id, examId: params.id } },
-      data: {
+      update: {
         endedAt: new Date(),
-        isCompleted: true
+        isCompleted: true,
+        score,
+        totalMarks
+      },
+      create: {
+        userId: currentUser.id,
+        examId: params.id,
+        collegeId: exam.collegeId,
+        startedAt: new Date(),
+        endedAt: new Date(),
+        isCompleted: true,
+        score,
+        totalMarks
       }
-    }).catch(() => undefined);
+    });
 
-    return NextResponse.json({ ok: true, score, totalMarks, percentage });
+    // Store individual student answers for detailed analysis
+    const answerPromises = parsed.data.answers.map(async (answer) => {
+      const question = questions.find(q => q.id === answer.questionId);
+      if (!question) return;
+
+      const isCorrect = question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE' 
+        ? String(answer.answer) === String(question.correctAnswer)
+        : false; // For essay/short answer, manual grading needed
+
+      const marksAwarded = isCorrect ? question.marks : 0;
+
+      await db.studentAnswer.upsert({
+        where: { 
+          attemptId_questionId: { 
+            attemptId: attempt.id, 
+            questionId: answer.questionId 
+          } 
+        },
+        update: {
+          selectedOptionId: typeof answer.answer === 'string' ? answer.answer : null,
+          answerText: typeof answer.answer === 'string' ? answer.answer : JSON.stringify(answer.answer),
+          isCorrect,
+          marksAwarded,
+          answeredAt: new Date()
+        },
+        create: {
+          attemptId: attempt.id,
+          questionId: answer.questionId,
+          selectedOptionId: typeof answer.answer === 'string' ? answer.answer : null,
+          answerText: typeof answer.answer === 'string' ? answer.answer : JSON.stringify(answer.answer),
+          isCorrect,
+          marksAwarded,
+          timeSpent: answer.timestamp || 0,
+          answeredAt: new Date(),
+          collegeId: exam.collegeId
+        }
+      });
+    });
+
+    await Promise.all(answerPromises);
+
+    return NextResponse.json({ 
+      ok: true, 
+      score, 
+      totalMarks, 
+      percentage, 
+      grade: gradeResult.grade,
+      attemptId: attempt.id 
+    });
   } catch (error) {
     captureError(error, { route: 'POST /api/exams/[id]/submit' });
     return NextResponse.json({ error: 'Failed to submit exam' }, { status: 500 });

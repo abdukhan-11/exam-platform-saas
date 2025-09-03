@@ -22,7 +22,7 @@ async function handler(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Teacher route error:', error);
+    console.error('College admin route error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

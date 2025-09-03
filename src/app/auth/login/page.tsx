@@ -207,7 +207,7 @@ function LoginForm() {
               </div>
             )}
 
-            {/* Authentication Tabs (Super Admin moved to /auth/superadmin) */}
+            {/* Authentication Tabs */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="admin-teacher">Admin/Teacher</TabsTrigger>

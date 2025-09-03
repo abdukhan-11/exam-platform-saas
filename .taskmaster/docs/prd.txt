@@ -1,374 +1,118 @@
-# Overview  
-We are building a comprehensive multi-tenant exam SaaS platform that digitizes and secures the examination process for educational institutions. The platform solves the critical problem of conducting fair, secure, and instantly graded online examinations while providing complete administrative control to educational institutions. 
+# Exam System Implementation PRD
 
-Our target users include colleges, schools, and educational institutions that need a reliable, anti-cheating exam system with instant results, student management, and subscription-based access control. The platform provides value by eliminating manual exam processes, preventing cheating through advanced monitoring, and offering immediate result generation with detailed analytics.
+## Project Overview
+Implement a comprehensive exam system for the existing SaaS platform that allows teachers to create and manage exams with multiple question types, while providing students with a secure exam-taking experience with anti-cheating features and automatic result calculation.
 
-# Core Features  
+## Current State Analysis
+The codebase already has:
+- Database schema with Exam, Question, StudentExamAttempt, StudentAnswer models
+- Basic exam creation API endpoints
+- Security infrastructure with exam-security.ts and exam-session-manager.ts
+- Student dashboard components for exam overview
+- College admin interface for exam management
+- Anti-cheating mechanisms and session management
 
-## Landing, Sign-up, and College Username Flow
-What it does: Streamlined onboarding and tenant routing using a unique college username
-Why it's important: Ensures clean isolation per institution and a simple entry point for users
-How it works:
-- Landing page shows two primary CTAs: Sign up (for new colleges) and Get Started (for existing colleges)
-- College Sign-up collects college details and a unique `college_username` (e.g., "greenfield_college"), then provisions tenant defaults in a single shared database
-- Get Started prompts for `college_username`
-  - If invalid, show helpful error and a link back to Sign up
-  - If valid, resolve `collegeId` and store it in session for row-level scoping
-- After selecting a valid `college_username`, show two options:
-  - Login as Admin/Teacher
-  - Login as Student
+## Requirements
 
-Authentication modes:
-- Admin/Teacher: Email/password (or invited account) within the selected college context
-- Student: Roll No (student_id) + password issued by teacher/admin, scoped to the selected college
+### 1. Teacher Exam Creation System
+- **Exam Creation Interface**: Teachers can create exams with:
+  - Multiple question types: Multiple Choice, True/False, Short Answer, Essay
+  - Time limits and scheduling
+  - Anti-cheating settings (browser lock, fullscreen, tab switching prevention)
+  - Bulk question entry functionality
+  - Question shuffling and randomization options
 
-Session isolation:
-- All subsequent operations are performed within the selected college context (row-level scoping by `collegeId`) for the remainder of the session
+- **Question Management**:
+  - Support for all question types with appropriate input fields
+  - Marking correct answers for auto-grading (MCQ, True/False)
+  - Question difficulty levels and point allocation
+  - Bulk import/export functionality
 
-## Super Admin Panel (Platform Owner)
-**What it does:** Complete control over all colleges, subscriptions, and platform-wide analytics
-**Why it's important:** Enables monetization, quality control, and centralized management of the entire SaaS platform
-**How it works:** Web-based dashboard with college CRUD operations, subscription management (free/paid/custom pricing), user analytics across all institutions, and the ability to ban/unban colleges
+### 2. Exam Publishing and Activation
+- **Publish Workflow**: 
+  - "Finish and Publish" button to make exam available
+  - "Start Exam" button to activate live exam for students
+  - Real-time status updates and notifications
 
-## College Admin/Teacher Panel  
-**What it does:** Institution-level management of students, exams, subjects, and results within their college boundary
-**Why it's important:** Provides educational institutions with complete autonomy over their examination processes while maintaining data isolation
-**How it works:** Role-based access control allowing teachers to:
-- Create/edit exams (per class and subject), set timers/schedules
-- Manage classes (e.g., Class 1, Class 2, ...)
-- Add/remove students, assign them to classes (enrollments)
-- Create student accounts with Roll No and temporary password
-- Manage subjects per class (e.g., Physics, Math, Urdu)
-- Update results/marks and view award lists per class and subject
-- Maintain upcoming events/exams per class and subject
-- View institution-only analytics and activity logs
- 
-### Teacher Class Management Workflow
-- Teachers are assigned to one or more classes
-- Teachers can create subjects scoped to specific classes
-- Teachers can view all students enrolled in their assigned classes
-- Teachers can generate award lists per exam, per subject (overall), and per class (overall)
+### 3. Student Exam Taking Experience
+- **Exam Access**: Students can see available exams in their dashboard
+- **Secure Exam Environment**:
+  - Browser lock and fullscreen enforcement
+  - Tab switching prevention
+  - Copy/paste blocking
+  - Real-time monitoring and violation tracking
+  - Individual timer per student
 
-## Student Panel with Anti-Cheating
-**What it does:** Secure exam-taking interface with real-time monitoring and instant result delivery
-**Why it's important:** Ensures exam integrity while providing immediate feedback to students
-**How it works:**
-- College selection via `college_username` precedes login
-- Student login with Roll No + password issued by teacher/admin
-- Student dashboard includes:
-  - Subject-wise marks (e.g., Physics 85%, Math 92%, Urdu 78%)
-  - Class award list/ranking (e.g., Position 5th out of 30)
-  - Upcoming exams (e.g., Math Test – Tomorrow 2PM)
-  - Recent exam results
-  - Profile management (Edit name, father name, photo, password)
-- Exam flow: locked browser, tab-switch prevention, randomized questions, timer, auto-submit
-- Post-exam: immediate result display and per-subject history of marks
-- Profile management: student can edit name, father-name, profile picture, and change password
+### 4. Auto-Grading and Results
+- **Immediate Results**: 
+  - Auto-grade multiple choice and true/false questions
+  - Display score and percentage immediately after submission
+  - Store results in database with detailed breakdown
 
-## Multi-Tenant Data Architecture (Single Database with Row-Level Isolation)
-**What it does:** Strong data isolation using a single shared database with `collegeId` foreign keys and strict row-level scoping
-**Why it's important:** Simpler operations and lower complexity while maintaining privacy, security, and scalability
-**How it works:**
-- Single PostgreSQL database contains all tenant data
-- `College` registry stores `college_username`, subscription tier, and status
-- Every tenant-scoped table includes a `collegeId` foreign key
-- Middleware and queries always scope by `collegeId` from the active session (set after College Username validation)
-- Role-based access is enforced within the selected college context only
+### 5. Performance Analytics and Award Lists
+- **Class Performance Dashboard**:
+  - Overall class rankings and statistics
+  - Subject-wise performance analysis
+  - Individual student performance tracking
+  - Award list generation and sharing
 
-## Real-time Exam Monitoring
-**What it does:** Live tracking of student behavior during examinations with cheating detection
-**Why it's important:** Maintains exam integrity and provides evidence of fair testing
-**How it works:** JavaScript-based monitoring for tab switches, copy/paste attempts, keyboard shortcuts, with detailed logging and immediate alerts to administrators
+### 6. Integration Requirements
+- **Connect Existing Components**:
+  - Link college-admin exam creation with student panel
+  - Integrate existing security features with exam flow
+  - Connect session management with real-time monitoring
+  - Use existing notification system for exam events
 
-# User Experience  
+## Technical Implementation
 
-## User Personas
+### Frontend Components Needed
+1. **Enhanced Exam Creation Form** - Extend existing exam creation with question types
+2. **Question Editor** - Support for all question types with proper validation
+3. **Bulk Question Entry** - Interface for adding multiple questions at once
+4. **Exam Status Dashboard** - Real-time exam status and student progress
+5. **Student Exam Interface** - Secure exam-taking environment
+6. **Results Display** - Immediate results and performance analytics
+7. **Award List Component** - Class rankings and performance sharing
 
-### Super Admin (Platform Owner)
-- **Role:** Platform owner managing multiple educational institutions
-- **Goals:** Maximize platform adoption, ensure quality service, generate revenue
-- **Pain Points:** Need oversight of all colleges without micromanaging individual institutions
-- **Tech Comfort:** High technical proficiency
+### Backend API Enhancements
+1. **Question Management APIs** - CRUD operations for different question types
+2. **Exam Activation APIs** - Publish and start exam functionality
+3. **Real-time Monitoring APIs** - Student progress and security monitoring
+4. **Auto-grading APIs** - Automatic scoring for objective questions
+5. **Analytics APIs** - Performance calculations and rankings
+6. **Result Management APIs** - Store and retrieve exam results
 
-### College Administrator/Teacher  
-- **Role:** Educational staff managing institution-specific examinations
-- **Goals:** Conduct fair exams efficiently, manage student data, get quick results
-- **Pain Points:** Manual exam processes, cheating concerns, slow result compilation
-- **Tech Comfort:** Medium technical proficiency
+### Database Updates
+1. **Question Type Support** - Ensure all question types are properly supported
+2. **Result Storage** - Enhanced result tracking with detailed breakdowns
+3. **Performance Analytics** - Tables for storing class performance data
+4. **Award Lists** - Storage for generated award lists and rankings
 
-### Student
-- **Role:** Exam takers accessing the platform for tests and results
-- **Goals:** Take exams without technical issues, get immediate results, track academic progress
-- **Pain Points:** Technical difficulties during exams, delayed results, unclear instructions
-- **Tech Comfort:** Low to medium technical proficiency
+### Security Integration
+1. **Exam Security Integration** - Connect existing security features with exam flow
+2. **Session Management** - Real-time session tracking and monitoring
+3. **Violation Handling** - Proper handling of security violations during exams
+4. **Result Integrity** - Ensure exam results are secure and tamper-proof
 
-## Key User Flows
+## Success Criteria
+1. Teachers can create exams with all required question types
+2. Students can take exams in a secure environment with all anti-cheating features active
+3. Multiple choice and true/false questions are auto-graded immediately
+4. Results are stored and can be viewed by both students and teachers
+5. Class performance analytics and award lists are generated automatically
+6. All existing security features are properly integrated and functional
+7. Real-time monitoring and notifications work during live exams
 
-### College Selection and Tenant Routing Flow
-1. Landing → click Get Started
-2. Enter `college_username`
-3. If valid, store tenant context in session; otherwise show helpful prompt with Sign up link
-4. Present two options: Login as Admin/Teacher or Login as Student
-5. Continue auth within the selected college context
+## Implementation Priority
+1. **Phase 1**: Enhance exam creation with question type support
+2. **Phase 2**: Implement secure student exam interface
+3. **Phase 3**: Add auto-grading and immediate results
+4. **Phase 4**: Develop performance analytics and award lists
+5. **Phase 5**: Integration testing and security validation
 
-### Student Exam Taking Flow
-1. Login with roll number and password
-2. View available exams dashboard
-3. Click "Start Exam" → System locks browser environment
-4. Answer questions with visible timer
-5. Auto-submit on timer expiry or manual submission
-6. Immediate result display with detailed breakdown
-
-### Teacher Exam Creation Flow
-1. Login to college admin panel
-2. Navigate to "Create New Exam"
-3. Select subject, set timer, add questions
-4. For MCQs: Add options and mark correct answers
-5. Set exam schedule and student access
-6. Publish exam → Students can see in their dashboard
-7. Monitor live exams → View who started, time remaining, completion status
-
-### Super Admin College Management Flow
-1. Login to super admin panel
-2. View all registered colleges
-3. Create new college account or modify existing
-4. Set subscription tier and pricing
-5. Monitor usage analytics and platform health
-
-## UI/UX Considerations
-- **Responsive Design:** Mobile-first approach for student accessibility
-- **Dark/Light Mode:** Eye comfort during long exam sessions  
-- **Accessibility:** WCAG 2.1 compliant for inclusive education
-- **Performance:** Sub-2-second page loads even with poor internet
-- **Error Handling:** Clear, non-technical error messages with recovery options
-
-# Technical Architecture  
-
-## System Components
-- **Frontend:** Next.js 14 with TypeScript, Tailwind CSS, shadcn/ui components
-- **Backend:** Next.js API routes with serverless functions
-- **Database:** PostgreSQL with Prisma ORM for type-safe database operations
-- **Authentication:** NextAuth.js with role-based access control (RBAC)
-- **Real-time:** Socket.io for live exam monitoring and notifications
-- **File Storage:** Cloudinary for question images and document storage
-- **Deployment:** Vercel for frontend, Supabase for database hosting
-
-## Data Models
-```
-Single DB (row-level isolation via collegeId)
-SuperAdmin → manages → College (1:many)
-College → has → college_username (unique), subscription/configs
-
-CollegeContext (scoped by collegeId on each entity)
-  ├── User (roles: COLLEGE_ADMIN, TEACHER, STUDENT)
-  │    └── StudentProfile (userId 1:1; rollNo unique per college; fatherName; profileImageUrl)
-  ├── Class (e.g., Class 1, Class 2)
-  │    ├── Enrollment (many:many between Student(User) and Class)
-  │    └── TeacherClassAssignment (teacherId ↔ classId linkage)
-  ├── Subject (scoped to Class and College)
-  │    └── Exam (per Subject and optionally per Class; timer, schedule)
-  │         ├── Question (1:many) → QuestionOption (1:many for MCQs)
-  │         └── StudentExamAttempt (Student attempts Exam) → StudentAnswer
-  ├── Award Lists (computed views or snapshot tables for rankings per exam/subject/class)
-  └── Event (upcoming exams/assignments per class/subject)
-```
-
-Additional Entity Attributes (implementation-oriented)
-- User/Student:
-  - Roll number generation: YYYY-XXX per college (e.g., 2025-001)
-  - Default password policy: teacher-specified or name+"123" (overrideable at first login)
-- Class:
-  - classTeacherId (primary teacher), academicYear (e.g., "2024-2025")
-- Subject:
-  - teacherId (assigned teacher), optional code (e.g., PHY101), optional totalMarks
-- Exam:
-  - allowLateSubmission (boolean), questionsRandomized (boolean)
-- Question:
-  - order (int), optional questionImage
-- StudentExamAttempt:
-  - timeSpent (minutes), grade (e.g., "A+", "A"), cheatingFlags[]
-- StudentAnswer:
-  - timeSpent (seconds per question)
-
-Award List Generation Logic
-- Types and scopes:
-  - EXAM_SPECIFIC: rank students by obtained marks for a single exam
-  - SUBJECT_CUMULATIVE: aggregate/average across all exams in a subject (term/range)
-  - CLASS_OVERALL: weighted/average across all subjects (term/range)
-- Tie-breakers:
-  - Higher total marks → most recent exam performance → earliest completion time → roll number (ascending)
-- Grade boundaries (defaults, configurable):
-  - A+ (90–100%), A (80–89%), B+ (70–79%), B (60–69%), C (50–59%), F (<50%)
-- Display rules:
-  - Show top 10 on dashboards; full lists available on demand
-- Update triggers:
-  - On submission/result change (event-driven), plus nightly recompute for aggregates
-
-## APIs and Integrations
-- **Authentication API:** JWT-based with refresh tokens
-- **College Selection API:** Resolve `college_username` → `collegeId`, establish tenant context for row-scoped queries
-- **Admin/Teacher Auth:** Email/password within college context
-- **Student Auth:** Roll No + password within college context
-- **Exam Management API:** CRUD operations for exams, questions, results per class/subject
-- **User Management API:** Student/teacher registration, role assignment, enrollments
-- **Analytics API:** Real-time dashboards and reporting
-- **Payment Integration:** Stripe for subscription billing (future)
-- **Email Service:** SendGrid for notifications and results
-
-Initial API Endpoints (non-exhaustive, for planning)
-- Auth: `/api/auth/resolve-college`, `/api/auth/login/admin`, `/api/auth/login/student`
-- Classes: `GET/POST/PUT/DELETE /api/classes`
-- Students: `GET /api/classes/[id]/students`, `POST /api/students`, `PUT/DELETE /api/students/[id]`, `POST /api/students/bulk-import`
-- Subjects: `GET /api/classes/[id]/subjects`, `POST /api/subjects`, `PUT /api/subjects/[id]`
-- Exams: `GET/POST /api/exams`, `POST /api/exams/[id]/questions`, `GET /api/exams/[id]/attempts`
-- Student Exam: `GET /api/student/exams/available`, `POST /api/student/exams/[id]/start`, `POST /api/student/exams/[id]/submit`, `GET /api/student/exams/[id]/result`
-- Dashboards/Reports: `GET /api/dashboard/teacher`, `GET /api/dashboard/student`, `GET /api/reports/award-list/[classId]`, `GET /api/reports/student-performance/[studentId]`
-
-## Infrastructure Requirements
-- **Database:** PostgreSQL with connection pooling
-- **Caching:** Redis for session management and frequent queries
-- **Security:** HTTPS, input validation, SQL injection prevention
-- **Monitoring:** Error tracking, performance metrics, uptime monitoring
-- **Backup:** Automated daily database backups with point-in-time recovery
-
-# Development Roadmap  
-
-## Phase 1: Foundation & Authentication (MVP Core)
-- Next.js project setup with TypeScript and Tailwind
-- Prisma schema implementation with all database models
-- Basic authentication system with NextAuth.js
-- Super admin panel with college CRUD operations
-- Role-based routing and access control
-- Basic UI components and layout structure
-
-## Phase 2: College Management System
-- College admin/teacher dashboard
-- Student registration and management
-- Subject creation and management  
-- Basic user profile management
-- College-specific data isolation via `collegeId` scoping
-- Email invitation system for new users
-
-## Phase 3: Basic Exam System
-- Exam creation interface for teachers
-- Question bank with MCQ support
-- Student exam list and basic exam taking interface
-- Timer implementation and auto-submission
-- Basic result calculation and display
-- Exam scheduling and student access control
-
-## Phase 4: Advanced Exam Security
-- Browser lock implementation during exams
-- Keyboard shortcut blocking and copy/paste prevention
-- Tab switching detection and prevention
-- Question randomization per student
-- Cheating detection logging and alerts
-- Full-screen mode enforcement
-
-## Phase 5: Results & Analytics
-- Detailed result analytics for teachers
-- Student performance tracking and history
-- Exam statistics and class performance analysis
-- Result export functionality (PDF/Excel)
-- Grade book integration
-- Parent/guardian result notifications
-
-## Phase 6: Enhanced Features
-- Written answer support with manual grading interface
-- Question bank sharing between teachers
-- Bulk student import/export
-- Advanced reporting and dashboard analytics
-- Mobile app development
-- Payment integration for subscriptions
-
-# Logical Dependency Chain
-
-## Foundation First (Critical Path)
-1. **Database Schema & Models** - Must be completed first as all features depend on data structure
-2. **Authentication System** - Required before any user-specific functionality
-3. **Role-Based Access Control** - Essential for multi-tenant security
-4. **Basic UI Framework** - Needed for all subsequent frontend development
-
-## Fastest Path to Usable Frontend
-1. **Static Landing Page** - Immediate visual progress (Day 1)
-2. **Login/Register Flow** - First interactive functionality (Day 2-3)
-3. **Dashboard Templates** - Visual structure for all user roles (Day 4-5)
-4. **Basic CRUD Operations** - Create/view colleges, users, subjects (Week 1)
-
-## Feature Atomicity and Buildability
-- **Exam Creation** depends on Subject Management and User Authentication
-- **Exam Taking** depends on Exam Creation and Security Features
-- **Results System** depends on Exam Taking and Answer Storage
-- **Analytics** depends on Results System and Historical Data
-- **Payment System** depends on College Management and User Analytics
-
-## Progressive Enhancement Strategy
-- Start with basic MCQ exams → Add written questions later
-- Begin with manual grading → Implement auto-grading features
-- Launch with basic security → Enhanced anti-cheating measures
-- Simple analytics first → Advanced reporting and insights
-
-# Risks and Mitigations  
-
-## Technical Challenges
-**Risk:** Browser compatibility issues with exam lock features
-**Mitigation:** Progressive enhancement approach, fallback modes for older browsers, extensive cross-browser testing
-
-**Risk:** Real-time monitoring performance at scale
-**Mitigation:** Implement efficient WebSocket connections, database query optimization, caching strategies
-
-**Risk:** Data security and privacy compliance
-**Mitigation:** End-to-end encryption, regular security audits, GDPR compliance implementation, secure coding practices
-
-## MVP Definition and Scope Management  
-**Risk:** Feature creep preventing MVP launch
-**Mitigation:** Strict scope definition - MVP includes only basic exam creation, taking, and result viewing. Advanced features deferred to post-MVP phases
-
-**Risk:** Over-engineering the initial version
-**Mitigation:** Focus on core functionality first: create exam → take exam → see result. Polish and optimization in later iterations
-
-**Risk:** Complex user onboarding reducing adoption
-**Mitigation:** Simple registration flow, demo data pre-loaded, comprehensive documentation and video tutorials
-
-## Resource Constraints
-**Risk:** Limited development time affecting quality
-**Mitigation:** Phased development approach, automated testing implementation, code review processes
-
-**Risk:** Database performance with multiple tenants
-**Mitigation:** Proper indexing strategy, query optimization, database partitioning plans for future scaling
-
-**Risk:** Cost overruns on cloud infrastructure
-**Mitigation:** Start with free tiers (Supabase, Vercel), implement monitoring and alerts, planned scaling strategy
-
-# Appendix  
-
-## Research Findings
-- 73% of educational institutions report cheating concerns in online exams
-- Average exam result processing time: 2-5 days manually vs instant with automated systems
-- 89% of students prefer immediate feedback over delayed results
-- Multi-tenant SaaS adoption in education growing 40% year-over-year
-
-## Technical Specifications
-- **Browser Support:** Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
-- **Performance Targets:** <2s page load, <500ms API response time
-- **Scalability:** Support for 10,000+ concurrent exam takers
-- **Uptime:** 99.9% availability SLA target
-- **Security:** SOC 2 Type II compliance preparation
-
-### Operational SLOs (experience targets)
-- College onboarding: < 5 minutes from registration to first student added
-- Exam creation: < 10 minutes to create and schedule a standard MCQ exam
-- Student time-to-start: < 30 seconds from login to exam start
-- Result delivery: immediate after exam submission
-
-## Competitive Analysis
-- **Google Forms:** Lacks advanced anti-cheating, limited to basic quizzes
-- **Examplify:** Desktop-only, expensive licensing, limited customization  
-- **ProctorU:** Requires human proctors, high cost per exam
-- **Our Advantage:** Cost-effective, web-based, institution-branded, automated anti-cheating
-
-## Future Considerations
-- **AI Integration:** Automated question generation, plagiarism detection
-- **Mobile Apps:** Native iOS/Android applications
-- **Advanced Analytics:** Predictive student performance modeling  
-- **International:** Multi-language support, regional compliance
+## Dependencies
+- Existing database schema and models
+- Current security infrastructure
+- Session management system
+- Notification system
+- User authentication and authorization

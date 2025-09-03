@@ -108,129 +108,42 @@ export function StudentEnrollment() {
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for demonstration
+  // Load data from API
   useEffect(() => {
     const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStudents([
-        {
-          id: '1',
-          rollNumber: '2024-001',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          department: 'Computer Science',
-          year: 2024,
-          status: 'active',
-          enrollmentDate: '2024-09-01',
-          classes: ['CS101', 'CS102']
-        },
-        {
-          id: '2',
-          rollNumber: '2024-002',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          department: 'Mathematics',
-          year: 2024,
-          status: 'active',
-          enrollmentDate: '2024-09-01',
-          classes: ['MATH101', 'MATH102']
-        },
-        {
-          id: '3',
-          rollNumber: '2023-001',
-          name: 'Mike Johnson',
-          email: 'mike.johnson@example.com',
-          department: 'Physics',
-          year: 2023,
-          status: 'active',
-          enrollmentDate: '2023-09-01',
-          classes: ['PHY101', 'PHY102']
-        }
-      ]);
+      try {
+        setIsLoading(true);
+        
+        // Load students, classes, and enrollments in parallel
+        const [studentsRes, classesRes, enrollmentsRes] = await Promise.all([
+          fetch('/api/users?role=STUDENT', { cache: 'no-store' }),
+          fetch('/api/classes', { cache: 'no-store' }),
+          fetch('/api/students/enrollment', { cache: 'no-store' })
+        ]);
 
-      setClasses([
-        {
-          id: '1',
-          name: 'CS101',
-          department: 'Computer Science',
-          year: 2024,
-          semester: 'Fall',
-          teacherId: 't1',
-          teacherName: 'Dr. Alice Brown',
-          studentCount: 25,
-          maxCapacity: 30,
-          schedule: 'Mon, Wed, Fri 9:00 AM - 10:30 AM',
-          room: 'Room 201',
-          description: 'Introduction to Computer Science',
-          subjects: ['Programming', 'Algorithms']
-        },
-        {
-          id: '2',
-          name: 'MATH101',
-          department: 'Mathematics',
-          year: 2024,
-          semester: 'Fall',
-          teacherId: 't2',
-          teacherName: 'Prof. Bob Wilson',
-          studentCount: 28,
-          maxCapacity: 35,
-          schedule: 'Tue, Thu 10:00 AM - 11:30 AM',
-          room: 'Room 301',
-          description: 'Calculus I',
-          subjects: ['Calculus', 'Mathematics']
-        },
-        {
-          id: '3',
-          name: 'PHY101',
-          department: 'Physics',
-          year: 2024,
-          semester: 'Fall',
-          teacherId: 't3',
-          teacherName: 'Dr. Carol Davis',
-          studentCount: 22,
-          maxCapacity: 30,
-          schedule: 'Mon, Wed 2:00 PM - 3:30 PM',
-          room: 'Lab 401',
-          description: 'Introduction to Physics',
-          subjects: ['Physics', 'Laboratory']
+        if (studentsRes.ok) {
+          const studentsData = await studentsRes.json();
+          setStudents(studentsData.users || []);
         }
-      ]);
 
-      setEnrollments([
-        {
-          id: '1',
-          studentId: '1',
-          studentName: 'John Doe',
-          studentRollNumber: '2024-001',
-          classId: '1',
-          className: 'CS101',
-          enrollmentDate: '2024-09-01',
-          status: 'active'
-        },
-        {
-          id: '2',
-          studentId: '2',
-          studentName: 'Jane Smith',
-          studentRollNumber: '2024-002',
-          classId: '2',
-          className: 'MATH101',
-          enrollmentDate: '2024-09-01',
-          status: 'active'
-        },
-        {
-          id: '3',
-          studentId: '3',
-          studentName: 'Mike Johnson',
-          studentRollNumber: '2023-001',
-          classId: '3',
-          className: 'PHY101',
-          enrollmentDate: '2024-09-01',
-          status: 'active'
+        if (classesRes.ok) {
+          const classesData = await classesRes.json();
+          setClasses(classesData.classes || []);
         }
-      ]);
 
-      setIsLoading(false);
+        if (enrollmentsRes.ok) {
+          const enrollmentsData = await enrollmentsRes.json();
+          setEnrollments(enrollmentsData.enrollments || []);
+        }
+      } catch (error) {
+        console.error('Failed to load enrollment data:', error);
+        // Fallback to empty arrays if API fails
+        setStudents([]);
+        setClasses([]);
+        setEnrollments([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadData();
@@ -249,7 +162,7 @@ export function StudentEnrollment() {
   const availableClasses = classes.filter(cls => cls.studentCount < cls.maxCapacity);
   const availableStudents = students.filter(student => student.status === 'active');
 
-  const handleEnrollStudent = (studentId: string, classId: string) => {
+  const handleEnrollStudent = async (studentId: string, classId: string) => {
     const student = students.find(s => s.id === studentId);
     const cls = classes.find(c => c.id === classId);
     
@@ -265,72 +178,117 @@ export function StudentEnrollment() {
       return;
     }
 
-    // Check class capacity
-    if (cls.studentCount >= cls.maxCapacity) {
-      alert('Class is at maximum capacity');
-      return;
+    try {
+      // Create enrollment via API
+      const response = await fetch('/api/students/enrollment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: studentId,
+          classId: classId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to enroll student');
+      }
+
+      const enrollmentData = await response.json();
+      
+      // Add to local state for immediate UI update
+      const newEnrollment: Enrollment = {
+        id: enrollmentData.id,
+        studentId,
+        studentName: student.name,
+        studentRollNumber: student.rollNumber || 'N/A',
+        classId,
+        className: cls.name,
+        enrollmentDate: enrollmentData.enrollmentDate,
+        status: 'active'
+      };
+
+      setEnrollments([...enrollments, newEnrollment]);
+      setIsEnrollDialogOpen(false);
+      
+      alert('Student enrolled successfully!');
+    } catch (error) {
+      console.error('Error enrolling student:', error);
+      alert(`Failed to enroll student: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // Create new enrollment
-    const newEnrollment: Enrollment = {
-      id: Date.now().toString(),
-      studentId,
-      studentName: student.name,
-      studentRollNumber: student.rollNumber,
-      classId,
-      className: cls.name,
-      enrollmentDate: new Date().toISOString().split('T')[0],
-      status: 'active'
-    };
-
-    setEnrollments([...enrollments, newEnrollment]);
-
-    // Update class student count
-    setClasses(classes.map(c => 
-      c.id === classId ? { ...c, studentCount: c.studentCount + 1 } : c
-    ));
-
-    // Update student classes
-    setStudents(students.map(s => 
-      s.id === studentId ? { ...s, classes: [...s.classes, cls.name] } : s
-    ));
-
-    setIsEnrollDialogOpen(false);
   };
 
-  const handleDropEnrollment = (enrollmentId: string) => {
+  const handleDropEnrollment = async (enrollmentId: string) => {
     const enrollment = enrollments.find(e => e.id === enrollmentId);
     if (!enrollment) return;
 
-    // Remove enrollment
-    setEnrollments(enrollments.filter(e => e.id !== enrollmentId));
+    try {
+      // Delete enrollment via API
+      const response = await fetch(`/api/students/enrollment?userId=${enrollment.studentId}&classId=${enrollment.classId}`, {
+        method: 'DELETE',
+      });
 
-    // Update class student count
-    setClasses(classes.map(c => 
-      c.id === enrollment.classId ? { ...c, studentCount: c.studentCount - 1 } : c
-    ));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to drop enrollment');
+      }
 
-    // Update student classes
-    setStudents(students.map(s => 
-      s.id === enrollment.studentId ? { 
-        ...s, 
-        classes: s.classes.filter(c => c !== enrollment.className) 
-      } : s
-    ));
+      // Remove from local state
+      setEnrollments(enrollments.filter(e => e.id !== enrollmentId));
+      
+      alert('Enrollment dropped successfully!');
+    } catch (error) {
+      console.error('Error dropping enrollment:', error);
+      alert(`Failed to drop enrollment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  const handleBulkEnroll = (studentIds: string[], classId: string) => {
+  const handleBulkEnroll = async (studentIds: string[], classId: string) => {
     const cls = classes.find(c => c.id === classId);
     if (!cls) return;
 
-    const availableSlots = cls.maxCapacity - cls.studentCount;
-    const studentsToEnroll = studentIds.slice(0, availableSlots);
+    try {
+      // Bulk enroll via API
+      const response = await fetch('/api/students/enrollment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userIds: studentIds,
+          classId: classId
+        }),
+      });
 
-    studentsToEnroll.forEach(studentId => {
-      handleEnrollStudent(studentId, classId);
-    });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to bulk enroll students');
+      }
 
-    setIsBulkEnrollDialogOpen(false);
+      const enrollmentData = await response.json();
+      
+      // Add new enrollments to local state
+      const newEnrollments: Enrollment[] = enrollmentData.enrollments.map((enrollment: any) => ({
+        id: enrollment.id,
+        studentId: enrollment.userId,
+        studentName: enrollment.user?.name || 'Unknown',
+        studentRollNumber: enrollment.user?.rollNumber || 'N/A',
+        classId: enrollment.classId,
+        className: enrollment.class?.name || cls.name,
+        enrollmentDate: enrollment.enrollmentDate,
+        status: 'active'
+      }));
+
+      setEnrollments([...enrollments, ...newEnrollments]);
+      setIsBulkEnrollDialogOpen(false);
+      
+      alert(`Successfully enrolled ${enrollmentData.enrollments.length} students!`);
+    } catch (error) {
+      console.error('Error bulk enrolling students:', error);
+      alert(`Failed to bulk enroll students: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   if (isLoading) {

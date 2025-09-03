@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /superadmin
+Disallow: /dashboard/superadmin
+Disallow: /auth/superadmin
+Disallow: /api/protected/
+
+# Allow all other pages
+Allow: /
+
+# Sitemap (if you have one)
+# Sitemap: https://yourdomain.com/sitemap.xml

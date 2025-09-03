@@ -26,9 +26,12 @@ import {
   Bell,
   User,
   LogOut,
-  X
+  X,
+  TrendingUp,
+  History
 } from 'lucide-react';
 import { useTheme } from '@/components/providers/theme-provider';
+import { getImpersonationData, clearImpersonationData, type ImpersonationData } from '@/utils/impersonation';
 import dynamic from 'next/dynamic';
 const NotificationCenter = dynamic(() => import('@/components/student/NotificationCenter'), { ssr: false });
 const GlobalSearch = dynamic(() => import('@/components/student/GlobalSearch'), { ssr: false });
@@ -41,7 +44,9 @@ interface StudentDashboardLayoutProps {
 const navigationItems = [
   { href: '/dashboard/student', label: 'Overview', icon: Home },
   { href: '/dashboard/student/exams', label: 'Exams', icon: FileText },
-  { href: '/dashboard/student/history', label: 'History', icon: BarChart3 },
+  { href: '/dashboard/student/results', label: 'Results', icon: BarChart3 },
+  { href: '/dashboard/student/performance', label: 'Performance', icon: TrendingUp },
+  { href: '/dashboard/student/history', label: 'History', icon: History },
   { href: '/dashboard/student/calendar', label: 'Calendar', icon: Calendar },
   { href: '/dashboard/student/awards', label: 'Awards', icon: Award },
   { href: '/dashboard/student/settings', label: 'Settings', icon: Settings },
@@ -53,6 +58,7 @@ export function StudentDashboardLayout({ children }: StudentDashboardLayoutProps
   const [unread, setUnread] = useState<number>(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [impersonationData, setImpersonationData] = useState<ImpersonationData | null>(null);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
 
@@ -65,7 +71,17 @@ export function StudentDashboardLayout({ children }: StudentDashboardLayoutProps
     console.log('Logout clicked');
   };
 
+  const handleReturnToAdmin = () => {
+    // Clear impersonation data and redirect to admin dashboard
+    clearImpersonationData();
+    window.location.href = '/dashboard/college-admin/students';
+  };
+
   useEffect(() => {
+    // Check for impersonation data using utility function
+    const data = getImpersonationData();
+    setImpersonationData(data);
+
     const loadUnread = async () => {
       try {
         const res = await fetch('/api/notifications?limit=1', { cache: 'no-store' });
@@ -166,6 +182,17 @@ export function StudentDashboardLayout({ children }: StudentDashboardLayoutProps
             </div>
 
             <div className="flex items-center space-x-4">
+              {impersonationData?.isImpersonating && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReturnToAdmin}
+                  className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Return to Admin
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -195,21 +222,39 @@ export function StudentDashboardLayout({ children }: StudentDashboardLayoutProps
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Student</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+                  <DropdownMenuLabel>
+                    {impersonationData?.isImpersonating ? 'Admin View' : 'Student'}
+                  </DropdownMenuLabel>
+                  {impersonationData?.isImpersonating && (
+                    <>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        Viewing as: {impersonationData.name}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/student/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
+                  {impersonationData?.isImpersonating ? (
+                    <DropdownMenuItem onClick={handleReturnToAdmin}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Return to Admin
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

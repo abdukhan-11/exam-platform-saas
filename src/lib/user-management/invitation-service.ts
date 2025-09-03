@@ -55,9 +55,12 @@ export class InvitationService {
   async createInvitation(data: CreateInvitationData): Promise<Prisma.UserInvitationGetPayload<{}>> {
     const { email, role, collegeId, invitedBy, expiresInHours = 72, customMessage } = data;
 
-    // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
+    // Check if user already exists in this college
+    const existingUser = await this.prisma.user.findFirst({
+      where: { 
+        email,
+        collegeId 
+      },
     });
 
     if (existingUser) {
@@ -197,8 +200,11 @@ export class InvitationService {
     }
 
     // Check if user already exists (double-check)
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: invitation.email },
+    const existingUser = await this.prisma.user.findFirst({
+      where: { 
+        email: invitation.email,
+        collegeId: invitation.collegeId 
+      },
     });
 
     if (existingUser) {

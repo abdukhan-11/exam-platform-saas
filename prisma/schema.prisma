@@ -97,6 +97,7 @@ model User {
   eventSubscriptions  EventSubscription[]
   eventReminders      EventReminder[]
   activityLogs        ActivityLog[]
+  examActivityLogs    ExamActivityLog[]
   emailLogs           EmailLog[]
   sentInvitations     UserInvitation[]         @relation("Inviter")
   acceptedInvitations UserInvitation[]         @relation("Accepter")
@@ -174,6 +175,7 @@ model Exam {
   questions   Question[]
   examResults ExamResult[]
   attempts    StudentExamAttempt[]
+  activityLog ExamActivityLog[]
   createdBy   User                 @relation(fields: [createdById], references: [id])
 
   @@index([collegeId])
@@ -251,6 +253,26 @@ model ExamResult {
   @@index([percentage])
   @@index([isCompleted])
   @@map("exam_result")
+}
+
+/// Activity log for exam lifecycle events (publish, activate, deactivate, etc.)
+model ExamActivityLog {
+  id        String   @id @default(cuid())
+  examId    String
+  userId    String
+  action    String   // PUBLISH, ACTIVATE, DEACTIVATE, UNPUBLISH, etc.
+  details   Json?    // Additional details about the action
+  createdAt DateTime @default(now())
+
+  // Relations
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("exam_activity_log")
 }
 
 /// Grading boundaries for converting percentages to grade letters.

@@ -363,6 +363,16 @@ export class ExamSessionManager {
    */
   private async updateStudentAttempt(examId: string, studentId: string, session: ExamSession): Promise<void> {
     try {
+      // Get exam to fetch collegeId
+      const exam = await db.exam.findUnique({
+        where: { id: examId },
+        select: { collegeId: true }
+      });
+
+      if (!exam) {
+        throw new Error('Exam not found');
+      }
+
       const attempt = await db.studentExamAttempt.upsert({
         where: {
           userId_examId: {
@@ -383,6 +393,7 @@ export class ExamSessionManager {
         create: {
           userId: studentId,
           examId: examId,
+          collegeId: exam.collegeId,
           startedAt: session.startedAt,
           score: 0,
           totalMarks: session.progress.totalQuestions,

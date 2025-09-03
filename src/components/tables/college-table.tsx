@@ -627,10 +627,20 @@ export default function CollegeTable({
                       </span>
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Link href={`/dashboard/superadmin/colleges/${college.id}/edit`}>
                           <Button variant="outline" size="sm">
                             Edit
+                          </Button>
+                        </Link>
+                        <Link href={`/dashboard/college-admin?as=superadmin&collegeId=${college.id}`}>
+                          <Button variant="outline" size="sm">
+                            Admin Panel
+                          </Button>
+                        </Link>
+                        <Link href={`/dashboard/student?as=superadmin&collegeId=${college.id}`}>
+                          <Button variant="outline" size="sm">
+                            Student Panel
                           </Button>
                         </Link>
                         <Button 

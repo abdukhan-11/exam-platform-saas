@@ -57,6 +57,7 @@ export default function ExamOverview() {
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
   const [query, setQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
+  const [targetCollegeId, setTargetCollegeId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -67,9 +68,23 @@ export default function ExamOverview() {
     const load = async () => {
       try {
         setLoading(true);
+        // Derive optional collegeId from URL when superadmin override is used
+        const url = new URL(window.location.href);
+        const asParam = url.searchParams.get('as');
+        const collegeIdParam = url.searchParams.get('collegeId') || undefined;
+        const useOverride = asParam === 'superadmin' && !!collegeIdParam;
+        setTargetCollegeId(useOverride ? collegeIdParam : undefined);
+
+        const examsUrl = new URL('/api/exams/available', window.location.origin);
+        const subjectsUrl = new URL('/api/subjects', window.location.origin);
+        if (useOverride && collegeIdParam) {
+          examsUrl.searchParams.set('collegeId', collegeIdParam);
+          subjectsUrl.searchParams.set('collegeId', collegeIdParam);
+        }
+
         const [examsRes, subjRes] = await Promise.all([
-          fetch('/api/exams', { cache: 'no-store' }),
-          fetch('/api/subjects', { cache: 'no-store' }),
+          fetch(examsUrl.toString(), { cache: 'no-store' }),
+          fetch(subjectsUrl.toString(), { cache: 'no-store' }),
         ]);
         const examsJson = await examsRes.json();
         setExams((examsJson?.items ?? []) as Exam[]);
@@ -101,7 +116,8 @@ export default function ExamOverview() {
 
   const onStartExam = (exam: Exam) => {
     // Navigate to exam taking flow (placeholder route)
-    router.push(`/dashboard/student/exams/${exam.id}`);
+    const querySuffix = targetCollegeId ? `?as=superadmin&collegeId=${targetCollegeId}` : '';
+    router.push(`/dashboard/student/exams/${exam.id}${querySuffix}`);
   };
 
   return (
@@ -190,10 +206,10 @@ export default function ExamOverview() {
                       Start
                     </Button>
                     <Button size="sm" variant="outline" asChild>
-                      <Link href={`/dashboard/student/exams/${exam.id}/details`}>Details</Link>
+                      <Link href={`/dashboard/student/exams/${exam.id}/details${targetCollegeId ? `?as=superadmin&collegeId=${targetCollegeId}` : ''}`}>Details</Link>
                     </Button>
                     <Button size="sm" variant="outline" asChild>
-                      <Link href={`/dashboard/student/exams/${exam.id}/results`}>Results</Link>
+                      <Link href={`/dashboard/student/exams/${exam.id}/results${targetCollegeId ? `?as=superadmin&collegeId=${targetCollegeId}` : ''}`}>Results</Link>
                     </Button>
                   </div>
                 </CardContent>

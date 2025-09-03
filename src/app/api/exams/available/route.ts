@@ -5,11 +5,17 @@ import { db } from '@/lib/db';
 import { auditLogger } from '@/lib/security/audit-logger';
 import { PermissionService, Permission } from '@/lib/user-management/permissions';
 
+interface AuthenticatedUser {
+  id: string;
+  role: string;
+  collegeId: string;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const currentUser = session.user as any;
+    const currentUser = session.user as AuthenticatedUser;
 
     if (!PermissionService.hasPermission(currentUser.role, Permission.READ_EXAM)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -20,7 +26,15 @@ export async function GET(req: NextRequest) {
     const classId = url.searchParams.get('classId') || undefined;
     const subjectId = url.searchParams.get('subjectId') || undefined;
 
-    const where: any = {
+    const where: {
+      collegeId: string;
+      isActive: boolean;
+      isPublished: boolean;
+      startTime: { lte: Date };
+      endTime: { gte: Date };
+      classId?: string | { in: string[] };
+      subjectId?: string;
+    } = {
       collegeId: currentUser.collegeId,
       isActive: true,
       isPublished: true,
@@ -38,7 +52,24 @@ export async function GET(req: NextRequest) {
       });
       const classIds = enrollments.map((e) => e.classId);
       if (classIds.length) {
-        where.classId = where.classId ? where.classId : { in: classIds };
+        // If exam has a specific class, check if student is enrolled in that class
+        // If exam is for "All Classes" (classId is null), show to all enrolled students
+        if (where.classId && typeof where.classId === 'string') {
+          // Exam is for a specific class - check if student is enrolled in that class
+          if (!classIds.includes(where.classId)) {
+            // Student is not enrolled in this specific class
+            await auditLogger.logAuthorization('access_denied', {
+              userId: currentUser.id,
+              role: currentUser.role,
+              collegeId: currentUser.collegeId,
+              resource: 'exam',
+              action: 'list_available',
+              reason: 'not_enrolled_in_class',
+            });
+            return NextResponse.json({ items: [] });
+          }
+        }
+        // For "All Classes" exams, no additional filtering needed - student can see it
       } else {
         // No active enrollments → return empty
         await auditLogger.logAuthorization('access_denied', {
@@ -84,20 +115,20 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ items: exams });
   } catch (error) {
-    console.error('Error listing available exams:', error);
-    try {
-      const session = await getServerSession(authOptions);
-      const currentUser = session?.user as any;
-      if (currentUser?.id) {
-        await auditLogger.logSystem('error', {
-          level: 'error',
-          description: 'Failed to list available exams',
-          metadata: { userId: currentUser.id },
-        });
-      }
-    } catch {}
-    return NextResponse.json({ error: 'Failed to list available exams' }, { status: 500 });
-  }
+      console.error('Error listing available exams:', error);
+      try {
+        const session = await getServerSession(authOptions);
+        const currentUser = session?.user as AuthenticatedUser | undefined;
+        if (currentUser?.id) {
+          await auditLogger.logSystem('error', {
+            level: 'error',
+            description: 'Failed to list available exams',
+            metadata: { userId: currentUser.id },
+          });
+        }
+      } catch {}
+      return NextResponse.json({ error: 'Failed to list available exams' }, { status: 500 });
+    }
 }
 
 
